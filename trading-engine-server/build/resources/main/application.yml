@@ -1,0 +1,9 @@
+spring:
+  kafka:
+    bootstrap-servers: "192.168.50.16:9092"
+    consumer:
+      properties:
+        spring:
+          json:
+            trusted:
+              packages: "com.herron.bitstamp.consumer.server.model.BitstampStockInstrument"
