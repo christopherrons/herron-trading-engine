@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.herron.exchange.tradingengine.server.adaptor.BitstampAdaptorTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2022-12-29T14:58:08" hostname="christopher-XPS-15-9570" time="0.127">
-  <properties/>
-  <testcase name="test_order_mapping()" classname="com.herron.exchange.tradingengine.server.adaptor.BitstampAdaptorTest" time="0.127"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

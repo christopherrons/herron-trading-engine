@@ -1,5 +1,6 @@
 package com.herron.exchange.tradingengine.server.matchingengine.model;
 
+import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.api.OrderbookData;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
@@ -8,11 +9,13 @@ import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
 import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.FifoMatchingAlgorithm;
 
+import java.util.Queue;
+
 public class FifoOrderbook implements Orderbook {
 
     private final OrderbookData orderbookData;
     private final ActiveOrders activeOrders = new ActiveOrders(new FifoOrderBookComparator());
-    private final MatchingAlgorithm matchingAlgorithm = new FifoMatchingAlgorithm();
+    private final MatchingAlgorithm matchingAlgorithm = new FifoMatchingAlgorithm(activeOrders);
 
     public FifoOrderbook(OrderbookData orderbookData) {
         this.orderbookData = orderbookData;
@@ -102,10 +105,10 @@ public class FifoOrderbook implements Orderbook {
     public int totalNumberOfPriceLevels() {
         return activeOrders.totalNumberOfPriceLevels();
     }
+
     @Override
     public int totalNumberOfBidPriceLevels() {
         return activeOrders.totalNumberOfBidPriceLevels();
-
     }
 
     @Override
@@ -118,10 +121,9 @@ public class FifoOrderbook implements Orderbook {
         return activeOrders.getOrder(orderId);
     }
 
-
     @Override
     public MatchingAlgorithmEnum getMatchingAlgorithm() {
-        return MatchingAlgorithmEnum.FIFO;
+        return orderbookData.matchingAlgorithm();
     }
 
     @Override
@@ -140,5 +142,9 @@ public class FifoOrderbook implements Orderbook {
 
     public double getBidPriceAtPriceLevel(int priceLevel) {
         return activeOrders.getBidPriceAtPriceLevel(priceLevel);
+    }
+
+    public Queue<Message> runMatchingAlgorithm() {
+        return matchingAlgorithm.runMatchingAlgorithm();
     }
 }

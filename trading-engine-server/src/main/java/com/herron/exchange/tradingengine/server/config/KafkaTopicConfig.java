@@ -17,7 +17,7 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic bitstampAuditTrailTopic() {
         return TopicBuilder
-                .name(TopicEnum.BITSTAMP_AUDIT_TRAIL.getTopicName())
+                .name(TopicEnum.HERRON_AUDIT_TRAIL.getTopicName())
                 .partitions(1)
                 .build();
     }

@@ -2,6 +2,7 @@ package com.herron.exchange.tradingengine.server.matchingengine.model;
 
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
+import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -10,7 +11,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 
-public class ActiveOrders {
+public class ActiveOrders implements ActiveOrderReadOnly {
     private final Map<String, Order> orderIdToOrder = new ConcurrentHashMap<>();
     private final TreeMap<Double, PriceLevel> bidPriceToPriceLevel = new TreeMap<>(Comparator.reverseOrder());
     private final TreeMap<Double, PriceLevel> askPriceToPriceLevel = new TreeMap<>();
@@ -37,11 +38,16 @@ public class ActiveOrders {
     }
 
     public void removeOrder(String orderId) {
+        if (!orderIdToOrder.containsKey(orderId)) {
+            return;
+        }
         Order order = orderIdToOrder.remove(orderId);
         PriceLevel priceLevel = findOrCreatePriceLevel(order);
-        priceLevel.remove(order);
-        if (priceLevel.isEmpty()) {
-            removePriceLevel(order);
+        if (priceLevel != null) {
+            priceLevel.remove(order);
+            if (priceLevel.isEmpty()) {
+                removePriceLevel(order);
+            }
         }
     }
 

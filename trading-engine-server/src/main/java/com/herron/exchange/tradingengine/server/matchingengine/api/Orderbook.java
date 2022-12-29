@@ -1,9 +1,14 @@
 package com.herron.exchange.tradingengine.server.matchingengine.api;
 
+import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 
+import java.util.Queue;
+
 public interface Orderbook {
+    Queue<Message> runMatchingAlgorithm();
+
     String getOrderbookId();
 
     MatchingAlgorithmEnum getMatchingAlgorithm();
