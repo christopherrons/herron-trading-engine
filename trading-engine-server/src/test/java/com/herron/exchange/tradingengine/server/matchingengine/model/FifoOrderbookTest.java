@@ -4,18 +4,22 @@ import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.api.Trade;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
+import com.herron.exchange.common.api.common.enums.OrderExecutionTypeEnum;
 import com.herron.exchange.common.api.common.enums.OrderSideEnum;
+import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.common.api.common.messages.herron.HerronOrderbookData;
 import com.herron.exchange.common.api.common.model.Member;
 import com.herron.exchange.common.api.common.model.Participant;
 import com.herron.exchange.common.api.common.model.User;
+import com.herron.exchange.tradingengine.server.matchingengine.orderbook.FifoOrderbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Optional;
 
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorUtils.buildOrderCreate;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorTestUtils.buildOrder;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorTestUtils.buildOrderCreate;
 import static org.junit.jupiter.api.Assertions.*;
 
 class FifoOrderbookTest {
@@ -27,7 +31,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testAddToOrderBook() {
+    void test_add_to_orderbook() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
         fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
@@ -38,7 +42,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testUpdateOrderBook() {
+    void test_update_orderbook() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         assertEquals(1, fifoOrderBook.totalNumberOfPriceLevels());
         assertEquals(1, fifoOrderBook.totalNumberOfBidPriceLevels());
@@ -55,7 +59,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testBestPriceAfterInsertOrders() {
+    void test_best_price_after_insert_orders() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "2"));
         assertEquals(100, fifoOrderBook.getBestBidPrice());
@@ -68,7 +72,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testRemoveFromOrderBook() {
+    void test_remove_from_orderbook() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
         fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
@@ -85,7 +89,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testBestPriceAfterRemoveOrder() {
+    void test_best_price_after_remove_order() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "2"));
         fifoOrderBook.addOrder(buildOrderCreate(0, 99, 10, OrderSideEnum.BID, "3"));
@@ -100,7 +104,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testVolume() {
+    void test_volume() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 11, OrderSideEnum.BID, "1"));
         fifoOrderBook.addOrder(buildOrderCreate(2, 102, 13, OrderSideEnum.ASK, "2"));
         fifoOrderBook.addOrder(buildOrderCreate(0, 99, 12, OrderSideEnum.BID, "3"));
@@ -118,7 +122,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testVolumeAtLevel() {
+    void test_volume_at_level() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 11, OrderSideEnum.BID, "1"));
         fifoOrderBook.addOrder(buildOrderCreate(2, 102, 13, OrderSideEnum.ASK, "2"));
         fifoOrderBook.addOrder(buildOrderCreate(0, 99, 12, OrderSideEnum.BID, "3"));
@@ -143,7 +147,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testMatchingAlgorithmSamePriceLevel() {
+    void test_matching_algorithm_same_price_Level() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         fifoOrderBook.addOrder(buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2"));
 
@@ -165,7 +169,7 @@ class FifoOrderbookTest {
     }
 
     @Test
-    void testMatchingAlgorithmSelfMatch() {
+    void test_matching_algorithm_self_match() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1", new Participant(new Member("member"), new User("user"))));
         fifoOrderBook.addOrder(buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2", new Participant(new Member("member"), new User("user"))));
 
@@ -173,6 +177,27 @@ class FifoOrderbookTest {
         addMessages(matchingMessages);
         Optional<Trade> trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst();
         assertFalse(trade.isPresent());
+    }
+
+    @Test
+    void test_add_non_active_order_to_orderbook() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+
+        assertEquals(3, fifoOrderBook.totalNumberOfActiveOrders());
+        assertEquals(2, fifoOrderBook.totalNumberOfBidOrders());
+        assertEquals(1, fifoOrderBook.totalNumberOfAskOrders());
+
+        fifoOrderBook.addOrder(buildOrder(3, 100, 10, OrderSideEnum.BID, "4", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT));
+        fifoOrderBook.addOrder(buildOrder(4, 100, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT));
+        fifoOrderBook.addOrder(buildOrder(5, 100, 10, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET));
+        fifoOrderBook.addOrder(buildOrder(6, 100, 10, OrderSideEnum.BID, "7", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET));
+        fifoOrderBook.addOrder(buildOrder(7, 100, 10, OrderSideEnum.BID, "8", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET));
+
+        assertEquals(3, fifoOrderBook.totalNumberOfActiveOrders());
+        assertEquals(2, fifoOrderBook.totalNumberOfBidOrders());
+        assertEquals(1, fifoOrderBook.totalNumberOfAskOrders());
     }
 
     private void addMessages(List<Message> messages) {
@@ -187,6 +212,5 @@ class FifoOrderbookTest {
                 }
             }
         }
-
     }
 }

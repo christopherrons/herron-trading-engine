@@ -11,7 +11,7 @@ import com.herron.exchange.common.api.common.model.User;
 
 import java.time.Instant;
 
-public class EventCreatorUtils {
+public class EventCreatorTestUtils {
     public static Order buildOrderCreate(long timeStampInMs,
                                          double price,
                                          double volume,
@@ -48,6 +48,28 @@ public class EventCreatorUtils {
                 "orderbookId",
                 OrderExecutionTypeEnum.FILL,
                 OrderTypeEnum.LIMIT,
+                OrderAddOperationTypeEnum.NEW_ORDER);
+    }
+
+    public static Order buildOrder(long timeStampInMs,
+                                   double price,
+                                   double volume,
+                                   OrderSideEnum orderSideEnum,
+                                   String orderId,
+                                   OrderExecutionTypeEnum orderExecutionTypeEnum,
+                                   OrderTypeEnum orderTypeEnum) {
+        return new HerronAddOrder(OrderOperationEnum.CREATE,
+                new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString())),
+                orderId,
+                orderSideEnum,
+                volume,
+                volume,
+                price,
+                timeStampInMs,
+                "inststrumenId",
+                "orderbookId",
+                orderExecutionTypeEnum,
+                orderTypeEnum,
                 OrderAddOperationTypeEnum.NEW_ORDER);
     }
 

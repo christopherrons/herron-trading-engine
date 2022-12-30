@@ -3,6 +3,7 @@ package com.herron.exchange.tradingengine.server.matchingengine.matchingalgorith
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
+import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ public class FifoNonActiveOrdersMatchingAlgorithm {
         if (nonActiveOrder.currentVolume() <= 0) {
             return new ArrayList<>();
         }
+
         return switch (nonActiveOrder.orderExecutionType()) {
             case FOK -> handleFillOrKill(nonActiveOrder);
             case FAK -> handleFillAndKill(nonActiveOrder);
@@ -98,6 +100,9 @@ public class FifoNonActiveOrdersMatchingAlgorithm {
     }
 
     private boolean isMatch(Order nonActiveOrder, Order opposingBestOrder) {
+        if (nonActiveOrder.orderType().equals(OrderTypeEnum.MARKET)) {
+            return true;
+        }
         return switch (nonActiveOrder.orderSide()) {
             case BID -> nonActiveOrder.price() >= opposingBestOrder.price();
             case ASK -> nonActiveOrder.price() <= opposingBestOrder.price();

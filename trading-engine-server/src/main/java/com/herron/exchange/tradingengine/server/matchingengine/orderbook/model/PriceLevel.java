@@ -1,7 +1,6 @@
-package com.herron.exchange.tradingengine.server.matchingengine.model;
+package com.herron.exchange.tradingengine.server.matchingengine.orderbook.model;
 
 import com.herron.exchange.common.api.common.api.Order;
-import com.herron.exchange.common.api.common.model.Participant;
 
 import java.util.Comparator;
 import java.util.TreeSet;

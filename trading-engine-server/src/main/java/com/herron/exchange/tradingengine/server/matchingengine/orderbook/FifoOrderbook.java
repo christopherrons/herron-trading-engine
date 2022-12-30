@@ -1,4 +1,4 @@
-package com.herron.exchange.tradingengine.server.matchingengine.model;
+package com.herron.exchange.tradingengine.server.matchingengine.orderbook;
 
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
@@ -31,7 +31,9 @@ public class FifoOrderbook implements Orderbook {
 
     @Override
     public void addOrder(Order order) {
-        activeOrders.addOrder(order);
+        if (order.isActiveOrder()){
+            activeOrders.addOrder(order);
+        }
     }
 
     @Override

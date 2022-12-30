@@ -5,6 +5,7 @@ import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.api.Trade;
 import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
+import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.common.api.common.enums.OrderUpdatedOperationTypeEnum;
 import com.herron.exchange.common.api.common.messages.herron.HerronCancelOrder;
 import com.herron.exchange.common.api.common.messages.herron.HerronTrade;
@@ -22,7 +23,14 @@ public class MatchingEngineUtils {
     public static Trade buildTrade(Order bidOrder,
                                    Order askOrder,
                                    double tradeVolume) {
-        boolean isBidSideAggressor = bidOrder.timeStampInMs() >= askOrder.timeStampInMs();
+        boolean isBidSideAggressor;
+        if (bidOrder.orderType().equals(OrderTypeEnum.MARKET)) {
+            isBidSideAggressor = true;
+        } else if (askOrder.orderType().equals(OrderTypeEnum.MARKET)) {
+            isBidSideAggressor = false;
+        } else {
+            isBidSideAggressor = bidOrder.timeStampInMs() >= askOrder.timeStampInMs();
+        }
         return new HerronTrade(bidOrder.participant(),
                 askOrder.participant(),
                 String.valueOf(CURRENT_TRADE_ID.getAndIncrement()),

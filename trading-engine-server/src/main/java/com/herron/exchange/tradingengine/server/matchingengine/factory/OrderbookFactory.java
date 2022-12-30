@@ -2,7 +2,7 @@ package com.herron.exchange.tradingengine.server.matchingengine.factory;
 
 import com.herron.exchange.common.api.common.api.OrderbookData;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
-import com.herron.exchange.tradingengine.server.matchingengine.model.FifoOrderbook;
+import com.herron.exchange.tradingengine.server.matchingengine.orderbook.FifoOrderbook;
 
 public class OrderbookFactory {
 

@@ -1,8 +1,10 @@
-package com.herron.exchange.tradingengine.server.matchingengine.model;
+package com.herron.exchange.tradingengine.server.matchingengine.orderbook;
 
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.enums.OrderSideEnum;
+import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
+import com.herron.exchange.tradingengine.server.matchingengine.orderbook.model.PriceLevel;
 
 import java.util.Comparator;
 import java.util.Map;
@@ -186,7 +188,7 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         double availableVolume = 0;
         Predicate<Order> participantFilter = o -> !o.participant().equals(order.participant());
         for (var level : bidPriceToPriceLevel.values()) {
-            if (order.price() <= level.getPrice()) {
+            if (order.orderType().equals(OrderTypeEnum.MARKET) || order.price() <= level.getPrice()) {
                 availableVolume = level.volumeAtPriceLevel(participantFilter);
             } else {
                 return false;

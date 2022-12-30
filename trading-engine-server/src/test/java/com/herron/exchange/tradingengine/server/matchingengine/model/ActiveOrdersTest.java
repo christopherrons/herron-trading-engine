@@ -2,10 +2,11 @@ package com.herron.exchange.tradingengine.server.matchingengine.model;
 
 import com.herron.exchange.common.api.common.enums.OrderSideEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
+import com.herron.exchange.tradingengine.server.matchingengine.orderbook.ActiveOrders;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorUtils.buildOrderCreate;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorTestUtils.buildOrderCreate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ActiveOrdersTest {
@@ -17,7 +18,7 @@ class ActiveOrdersTest {
     }
 
     @Test
-    void testAddToActiveOrders() {
+    void test_add_to_active_orders() {
         activeOrders.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         activeOrders.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
         activeOrders.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
@@ -30,7 +31,7 @@ class ActiveOrdersTest {
     }
 
     @Test
-    void testUpdateActiveOrder() {
+    void test_update_active_order() {
         activeOrders.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         assertEquals(1, activeOrders.totalNumberOfPriceLevels());
         assertEquals(1, activeOrders.totalNumberOfBidPriceLevels());
@@ -47,7 +48,7 @@ class ActiveOrdersTest {
     }
 
     @Test
-    void testBestPriceAfterInsertActiveOrders() {
+    void test_best_price_after_insert_active_orders() {
         activeOrders.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         activeOrders.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "2"));
         assertEquals(100, activeOrders.getBestBidPrice());
@@ -60,7 +61,7 @@ class ActiveOrdersTest {
     }
 
     @Test
-    void testRemoveToActiveOrders() {
+    void test_remove_to_active_orders() {
         activeOrders.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         activeOrders.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
         activeOrders.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
@@ -79,7 +80,7 @@ class ActiveOrdersTest {
     }
 
     @Test
-    void testBestPriceAfterRemoveActiveOrders() {
+    void test_best_price_after_remove_active_orders() {
         activeOrders.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         activeOrders.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "2"));
         activeOrders.addOrder(buildOrderCreate(0, 99, 10, OrderSideEnum.BID, "3"));
@@ -94,7 +95,7 @@ class ActiveOrdersTest {
     }
 
     @Test
-    void testVolume() {
+    void test_volume() {
         activeOrders.addOrder(buildOrderCreate(0, 100, 11, OrderSideEnum.BID, "1"));
         activeOrders.addOrder(buildOrderCreate(2, 102, 13, OrderSideEnum.ASK, "2"));
         activeOrders.addOrder(buildOrderCreate(0, 99, 12, OrderSideEnum.BID, "3"));
@@ -102,7 +103,6 @@ class ActiveOrdersTest {
         assertEquals(46, activeOrders.totalOrderVolume());
         assertEquals(23, activeOrders.totalBidVolume());
         assertEquals(23, activeOrders.totalAskVolume());
-
 
         activeOrders.removeOrder("1");
         activeOrders.removeOrder("2");
@@ -112,7 +112,7 @@ class ActiveOrdersTest {
     }
 
     @Test
-    void testVolumeAtLevel() {
+    void test_volume_at_level() {
         activeOrders.addOrder(buildOrderCreate(0, 100, 11, OrderSideEnum.BID, "1"));
         activeOrders.addOrder(buildOrderCreate(2, 102, 13, OrderSideEnum.ASK, "2"));
         activeOrders.addOrder(buildOrderCreate(0, 99, 12, OrderSideEnum.BID, "3"));
@@ -124,7 +124,6 @@ class ActiveOrdersTest {
         assertEquals(22, activeOrders.totalVolumeAtPriceLevel(2));
         assertEquals(12, activeOrders.totalBidVolumeAtPriceLevel(2));
         assertEquals(10, activeOrders.totalAskVolumeAtPriceLevel(2));
-
 
         activeOrders.removeOrder("1");
         activeOrders.removeOrder("2");

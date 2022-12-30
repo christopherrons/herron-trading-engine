@@ -2,7 +2,6 @@ package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.*;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
-import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.OrderbookCache;
@@ -10,7 +9,6 @@ import com.herron.exchange.tradingengine.server.matchingengine.cache.ReferanceDa
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Queue;
 
 public class MatchingEngine {
     private final OrderbookCache orderbookCache = new OrderbookCache();
@@ -48,7 +46,7 @@ public class MatchingEngine {
 
     private boolean handleOrder(Order order) {
         final Orderbook orderbook = orderbookCache.getOrderbook(order.orderbookId());
-        if (orderbook == null || isNonActiveOrder(order)) {
+        if (orderbook == null || order.isNonActiveOrder()) {
             return false;
         }
 
@@ -60,19 +58,8 @@ public class MatchingEngine {
         return true;
     }
 
-    private boolean isNonActiveOrder(Order order) {
-        if (order.orderType().equals(OrderTypeEnum.MARKET)) {
-            return true;
-        }
-
-        return switch (order.orderExecutionType()) {
-            case FAK, FOK -> true;
-            default -> false;
-        };
-    }
-
     public List<Message> runMatchingAlgorithm(Order order) {
-        if (isNonActiveOrder(order)) {
+        if (order.isNonActiveOrder()) {
             return runMatchingAlgorithmNonActiveOrder(order);
         }
         return runMatchingAlgorithm(order.orderbookId());
