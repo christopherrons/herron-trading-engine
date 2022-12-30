@@ -18,7 +18,7 @@ public class MatchingEngineUtils {
         boolean isBidSideAggressor = bidOrder.timeStampInMs() >= askOrder.timeStampInMs();
         return new HerronTrade(bidOrder.participant(),
                 askOrder.participant(),
-                CURRENT_TRADE_ID.getAndIncrement(),
+                String.valueOf(CURRENT_TRADE_ID.getAndIncrement()),
                 bidOrder.orderId(),
                 askOrder.orderId(),
                 isBidSideAggressor,

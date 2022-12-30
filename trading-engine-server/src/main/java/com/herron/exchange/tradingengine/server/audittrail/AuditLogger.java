@@ -26,13 +26,17 @@ public class AuditLogger {
     }
 
     public void logEvent() {
-        if (totalNrOfEvents.incrementAndGet() % MESSAGE_UPDATE_INTERVAL == 0) {
-            Instant currentTime = Instant.now();
-            LOGGER.info("{}: Messages received: {}. Current event rate {}/s, average event rate {}/s",
-                    eventLoggDescription, totalNrOfEvents.get(), getCurrentEventsPerSecond(currentTime), getAverageEventsPerSecond(currentTime));
-            lastLogUpdateTime = currentTime;
-            lastUpdateTimeNrOfEvents = new AtomicLong(totalNrOfEvents.get());
+        try {
+            if (totalNrOfEvents.incrementAndGet() % MESSAGE_UPDATE_INTERVAL == 0) {
+                Instant currentTime = Instant.now();
+                LOGGER.info("{}: Messages received: {}. Current event rate {}/s, average event rate {}/s",
+                        eventLoggDescription, totalNrOfEvents.get(), getCurrentEventsPerSecond(currentTime), getAverageEventsPerSecond(currentTime));
+                lastLogUpdateTime = currentTime;
+                lastUpdateTimeNrOfEvents = new AtomicLong(totalNrOfEvents.get());
+            }
+        } catch (ArithmeticException ignore) {
         }
+
     }
 
     private long getCurrentEventsPerSecond(final Instant currentTime) {

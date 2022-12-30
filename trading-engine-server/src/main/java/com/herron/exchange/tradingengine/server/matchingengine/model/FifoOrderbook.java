@@ -3,7 +3,9 @@ package com.herron.exchange.tradingengine.server.matchingengine.model;
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.api.OrderbookData;
+import com.herron.exchange.common.api.common.api.StateChange;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
+import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
@@ -13,6 +15,7 @@ import java.util.Queue;
 
 public class FifoOrderbook implements Orderbook {
 
+    private StateChangeTypeEnum stateChangeTypeEnum = StateChangeTypeEnum.INVALID_STATE_CHANGE;
     private final OrderbookData orderbookData;
     private final ActiveOrders activeOrders = new ActiveOrders(new FifoOrderBookComparator());
     private final MatchingAlgorithm matchingAlgorithm = new FifoMatchingAlgorithm(activeOrders);
@@ -144,7 +147,18 @@ public class FifoOrderbook implements Orderbook {
         return activeOrders.getBidPriceAtPriceLevel(priceLevel);
     }
 
+    @Override
+    public void updateState(StateChange stateChange) {
+        stateChangeTypeEnum = stateChange.stateChangeType();
+    }
+
+    @Override
+    public StateChangeTypeEnum getState() {
+        return stateChangeTypeEnum;
+    }
+
     public Queue<Message> runMatchingAlgorithm() {
         return matchingAlgorithm.runMatchingAlgorithm();
     }
+
 }

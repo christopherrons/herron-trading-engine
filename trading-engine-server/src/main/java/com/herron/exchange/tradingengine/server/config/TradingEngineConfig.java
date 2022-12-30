@@ -28,7 +28,7 @@ public class TradingEngineConfig {
         return new BitstampAdaptor(tradingEngine);
     }
 
-    @Bean
+    @Bean(initMethod = "init")
     public TradingEngine tradingEngine(AuditTrail auditTrail, MatchingEngine matchingEngine) {
         return new TradingEngine(matchingEngine, auditTrail);
     }

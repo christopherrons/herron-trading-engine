@@ -2,11 +2,17 @@ package com.herron.exchange.tradingengine.server.matchingengine.api;
 
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
+import com.herron.exchange.common.api.common.api.StateChange;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
+import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 
 import java.util.Queue;
 
 public interface Orderbook {
+
+    void updateState(StateChange stateChange);
+
+    StateChangeTypeEnum getState();
     Queue<Message> runMatchingAlgorithm();
 
     String getOrderbookId();

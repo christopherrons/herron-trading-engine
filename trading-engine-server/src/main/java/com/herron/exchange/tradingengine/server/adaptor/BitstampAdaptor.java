@@ -22,16 +22,20 @@ public class BitstampAdaptor {
     }
 
     @KafkaListener(topics = "bitstamp-market-data", groupId = "bitstamp-market-data-1")
-    public void listenBitstampMarketData(ConsumerRecord<String, String> messageRecord) {
-        Message message = decodeMessage(messageRecord.key(), messageRecord.value());
+    public void listenBitstampMarketData(ConsumerRecord<String, String> consumerRecord) {
+        Message message = decodeMessage(consumerRecord.key(), consumerRecord.value());
         if (message == null) {
-            LOGGER.warn("Unable to map message: {}", messageRecord);
+            LOGGER.warn("Unable to map message: {}", consumerRecord);
         } else {
-            publishMessage(message);
+            try {
+                queueMessage(message);
+            } catch (Exception e) {
+                LOGGER.warn("Unhandled exception for record: {], decoded-message: {}, {}", consumerRecord, message, e);
+            }
         }
     }
 
-    private void publishMessage(Message message) {
+    private void queueMessage(Message message) {
         switch (message.messageType()) {
             case BITSTAMP_STOCK_INSTRUMENT -> tradingEngine.queueMessage(new HerronStockInstrument((Instrument) message));
             case BITSTAMP_ORDERBOOK_DATA -> tradingEngine.queueMessage(new HerronOrderbookData((OrderbookData) message));

@@ -71,7 +71,7 @@ public class EventCreatorUtils {
                                    double price,
                                    double volume,
                                    boolean isBidSideAggressor,
-                                   long tradeId,
+                                   String tradeId,
                                    Participant bidParticipant,
                                    Participant askParticipant) {
         return new HerronTrade(

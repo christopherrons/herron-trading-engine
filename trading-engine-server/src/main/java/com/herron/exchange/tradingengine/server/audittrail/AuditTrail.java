@@ -3,7 +3,6 @@ package com.herron.exchange.tradingengine.server.audittrail;
 import com.herron.exchange.common.api.common.api.Message;
 import org.springframework.kafka.core.KafkaTemplate;
 
-import java.util.List;
 import java.util.Queue;
 
 public class AuditTrail {
@@ -17,11 +16,11 @@ public class AuditTrail {
 
     public void handleMessages(Queue<Message> messages) {
         for (var message : messages) {
-            handleMessage(message);
+            publish(message);
         }
     }
 
-    public void handleMessage(Message message) {
+    public void publish(Message message) {
         // kafkaTemplate.send(TopicEnum.BITSTAMP_AUDIT_TRAIL.getTopicName(), message.messageType().getMessageTypeId(), message);
         System.out.println(message);
         auditLogger.logEvent();
