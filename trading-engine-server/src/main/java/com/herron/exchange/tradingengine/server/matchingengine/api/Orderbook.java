@@ -14,7 +14,7 @@ public interface Orderbook {
 
     StateChangeTypeEnum getState();
 
-    List<Message> runMatchingAlgorithmNonActiveOrder();
+    List<Message> runMatchingAlgorithm();
 
     List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder);
 

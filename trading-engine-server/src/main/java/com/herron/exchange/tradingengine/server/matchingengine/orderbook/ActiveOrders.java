@@ -206,7 +206,7 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         Predicate<Order> participantFilter = o -> !o.participant().equals(order.participant());
         for (var level : askPriceToPriceLevel.values()) {
             if (order.price() >= level.getPrice()) {
-                availableVolume = level.volumeAtPriceLevel(participantFilter);
+                availableVolume += level.volumeAtPriceLevel(participantFilter);
             } else {
                 return false;
             }

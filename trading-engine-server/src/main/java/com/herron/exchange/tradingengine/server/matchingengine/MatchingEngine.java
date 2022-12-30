@@ -72,18 +72,15 @@ public class MatchingEngine {
             return result;
         }
 
-        while (true) {
-            var matchingMessages = orderbook.runMatchingAlgorithmNonActiveOrder();
+        List<Message> matchingMessages;
+        do {
+            matchingMessages = orderbook.runMatchingAlgorithm();
             matchingMessages.forEach(message -> {
                 result.add(message);
                 add(message);
             });
+        } while (!matchingMessages.isEmpty());
 
-            if (matchingMessages.isEmpty()) {
-                break;
-
-            }
-        }
         return result;
     }
 
@@ -94,20 +91,17 @@ public class MatchingEngine {
             return result;
         }
 
-        while (true) {
-            var matchingMessages = orderbook.runMatchingAlgorithmNonActiveOrder(nonActiveOrder);
+        List<Message> matchingMessages;
+        do {
+            matchingMessages = orderbook.runMatchingAlgorithmNonActiveOrder(nonActiveOrder);
             for (var message : matchingMessages) {
                 result.add(message);
-                if (!add(message)) {
-                    nonActiveOrder = (Order) message;
+                if (!add(message) && message instanceof Order order) {
+                    nonActiveOrder = order;
                 }
             }
+        } while (!matchingMessages.isEmpty() && !nonActiveOrder.orderOperation().equals(OrderOperationEnum.DELETE));
 
-            if (matchingMessages.isEmpty() || nonActiveOrder.orderOperation().equals(OrderOperationEnum.DELETE)) {
-                break;
-
-            }
-        }
         return result;
     }
 }

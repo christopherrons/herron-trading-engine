@@ -24,7 +24,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return nonActiveOrdersMatchingAlgorithm.runMatchingAlgorithmNonActiveOrder(nonActiveOrder);
     }
 
-    public List<Message> runMatchingAlgorithmNonActiveOrder() {
+    public List<Message> runMatchingAlgorithm() {
         if (!activeOrders.hasBidAndAskOrders()) {
             return new ArrayList<>();
         }

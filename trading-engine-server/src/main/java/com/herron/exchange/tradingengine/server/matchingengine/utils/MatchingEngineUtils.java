@@ -67,7 +67,7 @@ public class MatchingEngineUtils {
                 order.orderId(),
                 order.orderSide(),
                 order.initialVolume(),
-                order.currentVolume(),
+                orderCancelOperationTypeEnum.equals(OrderCancelOperationTypeEnum.FILLED) ? 0 : order.currentVolume(),
                 order.price(),
                 order.timeStampInMs(),
                 order.instrumentId(),
@@ -86,15 +86,19 @@ public class MatchingEngineUtils {
 
         final List<Message> matchingMessages = new ArrayList<>();
 
-        if (bidOrder.currentVolume() - tradeVolume <= 0) {
+        if (isFilled(bidOrder, tradeVolume)) {
             matchingMessages.add(buildCancelOrder(bidOrder, OrderCancelOperationTypeEnum.FILLED));
-        } else {
+        }
+
+        if (isFilled(askOrder, tradeVolume)) {
+            matchingMessages.add(buildCancelOrder(askOrder, OrderCancelOperationTypeEnum.FILLED));
+        }
+
+        if (!isFilled(bidOrder, tradeVolume)) {
             matchingMessages.add(buildUpdateOrder(bidOrder, tradeVolume, OrderUpdatedOperationTypeEnum.PARTIAL_FILL));
         }
 
-        if (askOrder.currentVolume() - tradeVolume <= 0) {
-            matchingMessages.add(buildCancelOrder(askOrder, OrderCancelOperationTypeEnum.FILLED));
-        } else {
+        if (!isFilled(askOrder, tradeVolume)) {
             matchingMessages.add(buildUpdateOrder(askOrder, tradeVolume, OrderUpdatedOperationTypeEnum.PARTIAL_FILL));
         }
 
@@ -109,19 +113,27 @@ public class MatchingEngineUtils {
 
         List<Message> matchingMessages = new ArrayList<>();
 
-        if (bidOrder.currentVolume() - tradeVolume <= 0) {
+        if (isFilled(bidOrder, tradeVolume)) {
             matchingMessages.add(buildCancelOrder(bidOrder, OrderCancelOperationTypeEnum.SELF_MATCH));
-        } else {
+        }
+
+        if (isFilled(askOrder, tradeVolume)) {
+            matchingMessages.add(buildCancelOrder(askOrder, OrderCancelOperationTypeEnum.SELF_MATCH));
+        }
+
+        if (!isFilled(bidOrder, tradeVolume)) {
             matchingMessages.add(buildUpdateOrder(bidOrder, tradeVolume, OrderUpdatedOperationTypeEnum.SELF_MATCH));
         }
 
-        if (askOrder.currentVolume() - tradeVolume <= 0) {
-            matchingMessages.add(buildCancelOrder(askOrder, OrderCancelOperationTypeEnum.SELF_MATCH));
-        } else {
+        if (!isFilled(askOrder, tradeVolume)) {
             matchingMessages.add(buildUpdateOrder(askOrder, tradeVolume, OrderUpdatedOperationTypeEnum.SELF_MATCH));
         }
 
         return matchingMessages;
+    }
+
+    private static boolean isFilled(Order order, double tradeVolume) {
+        return order.currentVolume() - tradeVolume <= 0;
     }
 
     private static boolean isSelfMatch(Participant bidParticipant, Participant askParticipant) {

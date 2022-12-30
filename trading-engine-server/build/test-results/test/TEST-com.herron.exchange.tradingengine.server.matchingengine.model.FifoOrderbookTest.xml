@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="com.herron.exchange.tradingengine.server.matchingengine.model.FifoOrderbookTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2022-12-30T17:41:20" hostname="christopher-XPS-15-9570" time="0.023">
-  <properties/>
-  <testcase name="test_add_non_active_order_to_orderbook()" classname="com.herron.exchange.tradingengine.server.matchingengine.model.FifoOrderbookTest" time="0.023"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>

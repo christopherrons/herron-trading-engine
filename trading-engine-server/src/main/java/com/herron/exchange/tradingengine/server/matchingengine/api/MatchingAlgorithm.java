@@ -7,7 +7,7 @@ import java.util.List;
 
 public interface MatchingAlgorithm {
 
-    List<Message> runMatchingAlgorithmNonActiveOrder();
+    List<Message> runMatchingAlgorithm();
 
     List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder);
 }

@@ -26,7 +26,9 @@ public class FifoOrderbook implements Orderbook {
 
     @Override
     public void updateOrder(Order order) {
-        activeOrders.updateOrder(order);
+        if (order.isActiveOrder()){
+            activeOrders.updateOrder(order);
+        }
     }
 
     @Override
@@ -43,7 +45,9 @@ public class FifoOrderbook implements Orderbook {
 
     @Override
     public void removeOrder(Order order) {
-        activeOrders.removeOrder(order);
+        if (order.isActiveOrder()){
+            activeOrders.removeOrder(order);
+        }
     }
 
     @Override
@@ -159,8 +163,8 @@ public class FifoOrderbook implements Orderbook {
         return stateChangeTypeEnum;
     }
 
-    public List<Message> runMatchingAlgorithmNonActiveOrder() {
-        return matchingAlgorithm.runMatchingAlgorithmNonActiveOrder();
+    public List<Message> runMatchingAlgorithm() {
+        return matchingAlgorithm.runMatchingAlgorithm();
     }
 
     public List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder) {

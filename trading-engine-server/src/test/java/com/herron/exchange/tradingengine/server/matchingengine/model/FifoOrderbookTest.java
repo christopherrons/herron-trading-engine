@@ -1,12 +1,7 @@
 package com.herron.exchange.tradingengine.server.matchingengine.model;
 
-import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.api.Order;
-import com.herron.exchange.common.api.common.api.Trade;
-import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
-import com.herron.exchange.common.api.common.enums.OrderExecutionTypeEnum;
-import com.herron.exchange.common.api.common.enums.OrderSideEnum;
-import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
+import com.herron.exchange.common.api.common.api.*;
+import com.herron.exchange.common.api.common.enums.*;
 import com.herron.exchange.common.api.common.messages.herron.HerronOrderbookData;
 import com.herron.exchange.common.api.common.model.Member;
 import com.herron.exchange.common.api.common.model.Participant;
@@ -135,7 +130,6 @@ class FifoOrderbookTest {
         assertEquals(12, fifoOrderBook.totalBidVolumeAtPriceLevel(2));
         assertEquals(10, fifoOrderBook.totalAskVolumeAtPriceLevel(2));
 
-
         fifoOrderBook.removeOrder("1");
         fifoOrderBook.removeOrder("2");
         assertEquals(20, fifoOrderBook.totalVolumeAtPriceLevel(1));
@@ -151,7 +145,7 @@ class FifoOrderbookTest {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
         fifoOrderBook.addOrder(buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2"));
 
-        List<Message> matchingMessages = fifoOrderBook.runMatchingAlgorithmNonActiveOrder();
+        List<Message> matchingMessages = fifoOrderBook.runMatchingAlgorithm();
         addMessages(matchingMessages);
         Trade trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
         assertEquals(5, fifoOrderBook.totalOrderVolume());
@@ -160,11 +154,11 @@ class FifoOrderbookTest {
 
         fifoOrderBook.addOrder(buildOrderCreate(3, 100, 6, OrderSideEnum.BID, "3"));
 
-        matchingMessages = fifoOrderBook.runMatchingAlgorithmNonActiveOrder();
+        matchingMessages = fifoOrderBook.runMatchingAlgorithm();
         addMessages(matchingMessages);
         trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
         assertEquals(1, fifoOrderBook.totalOrderVolume());
-        assertNotEquals(0, trade.tradeId());
+        assertNotEquals("0", trade.tradeId());
         assertTrue(trade.isBidSideAggressor());
     }
 
@@ -173,7 +167,7 @@ class FifoOrderbookTest {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1", new Participant(new Member("member"), new User("user"))));
         fifoOrderBook.addOrder(buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2", new Participant(new Member("member"), new User("user"))));
 
-        List<Message> matchingMessages = fifoOrderBook.runMatchingAlgorithmNonActiveOrder();
+        List<Message> matchingMessages = fifoOrderBook.runMatchingAlgorithm();
         addMessages(matchingMessages);
         Optional<Trade> trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst();
         assertFalse(trade.isPresent());
@@ -198,6 +192,197 @@ class FifoOrderbookTest {
         assertEquals(3, fifoOrderBook.totalNumberOfActiveOrders());
         assertEquals(2, fifoOrderBook.totalNumberOfBidOrders());
         assertEquals(1, fifoOrderBook.totalNumberOfAskOrders());
+    }
+
+    @Test
+    void test_matching_algorithm_limit_fill_or_kill_kill() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 99, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+
+        var order = buildOrder(3, 101, 100, OrderSideEnum.BID, "4", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        addMessages(result);
+
+        assertEquals(1, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_limit_fill_or_kill_partial_fill() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, 102, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+
+        assertEquals(3, result.size());
+        assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_limit_fill_or_kill_filled() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, 102, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_limit_fill_and_kill_killed() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, 100.5, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(1, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_limit_fill_and_kill_partial_filled() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, 102, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_limit_fill_and_kill_filled() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, 101, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_killed() {
+        var order = buildOrder(3, 100.5, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(1, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_partial_filled() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, Integer.MAX_VALUE, 100, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_filled() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        assertEquals(4, fifoOrderBook.totalNumberOfActiveOrders());
+        assertEquals(2, fifoOrderBook.totalNumberOfBidOrders());
+        assertEquals(2, fifoOrderBook.totalNumberOfAskOrders());
+
+        var order = buildOrder(3, Integer.MAX_VALUE, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_or_kill_killed() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, Integer.MAX_VALUE, 100, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(1, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_or_kill_partial_fill() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, Integer.MAX_VALUE, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_or_kill_filled() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, Integer.MAX_VALUE, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_and_kill_killed() {
+        var order = buildOrder(3, Integer.MAX_VALUE, 100, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(1, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_and_kill_partial_fill() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, Integer.MAX_VALUE, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+    }
+
+    @Test
+    void test_matching_algorithm_market_fill_and_kill_filled() {
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
+        fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "2"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
+        fifoOrderBook.addOrder(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
+
+        var order = buildOrder(3, Integer.MAX_VALUE, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET);
+        var result = fifoOrderBook.runMatchingAlgorithmNonActiveOrder(order);
+        assertEquals(3, result.size());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(1)).cancelOperationType());
     }
 
     private void addMessages(List<Message> messages) {
