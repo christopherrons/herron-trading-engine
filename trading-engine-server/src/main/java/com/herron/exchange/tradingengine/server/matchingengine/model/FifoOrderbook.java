@@ -11,7 +11,7 @@ import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
 import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.FifoMatchingAlgorithm;
 
-import java.util.Queue;
+import java.util.List;
 
 public class FifoOrderbook implements Orderbook {
 
@@ -157,8 +157,12 @@ public class FifoOrderbook implements Orderbook {
         return stateChangeTypeEnum;
     }
 
-    public Queue<Message> runMatchingAlgorithm() {
-        return matchingAlgorithm.runMatchingAlgorithm();
+    public List<Message> runMatchingAlgorithmNonActiveOrder() {
+        return matchingAlgorithm.runMatchingAlgorithmNonActiveOrder();
+    }
+
+    public List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder) {
+        return matchingAlgorithm.runMatchingAlgorithmNonActiveOrder(nonActiveOrder);
     }
 
 }

@@ -2,7 +2,6 @@ package com.herron.exchange.tradingengine.server.config;
 
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import com.herron.exchange.tradingengine.server.adaptor.BitstampAdaptor;
-import com.herron.exchange.tradingengine.server.audittrail.AuditLogger;
 import com.herron.exchange.tradingengine.server.audittrail.AuditTrail;
 import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
 import org.springframework.context.annotation.Bean;

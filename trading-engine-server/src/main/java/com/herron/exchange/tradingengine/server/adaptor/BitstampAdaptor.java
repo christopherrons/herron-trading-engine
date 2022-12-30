@@ -1,7 +1,7 @@
 package com.herron.exchange.tradingengine.server.adaptor;
 
 import com.herron.exchange.common.api.common.api.*;
-import com.herron.exchange.common.api.common.messages.herron.HerronOrder;
+import com.herron.exchange.common.api.common.messages.herron.HerronAddOrder;
 import com.herron.exchange.common.api.common.messages.herron.HerronOrderbookData;
 import com.herron.exchange.common.api.common.messages.herron.HerronStateChange;
 import com.herron.exchange.common.api.common.messages.herron.HerronStockInstrument;
@@ -40,7 +40,7 @@ public class BitstampAdaptor {
             case BITSTAMP_STOCK_INSTRUMENT -> tradingEngine.queueMessage(new HerronStockInstrument((Instrument) message));
             case BITSTAMP_ORDERBOOK_DATA -> tradingEngine.queueMessage(new HerronOrderbookData((OrderbookData) message));
             case BITSTAMP_STATE_CHANGE -> tradingEngine.queueMessage(new HerronStateChange((StateChange) message));
-            case BITSTAMP_ORDER -> tradingEngine.queueMessage(new HerronOrder((Order) message));
+            case BITSTAMP_ADD_ORDER -> tradingEngine.queueMessage(new HerronAddOrder((AddOrder) message));
         }
     }
 }

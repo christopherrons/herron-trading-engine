@@ -11,4 +11,6 @@ public interface ActiveOrderReadOnly {
     Optional<Order> getBestAskOrder();
 
     boolean hasBidAndAskOrders();
+
+    boolean isTotalFillPossible(Order order);
 }

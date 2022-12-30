@@ -1,9 +1,11 @@
 package com.herron.exchange.tradingengine.server.matchingengine.model;
 
 import com.herron.exchange.common.api.common.api.Order;
+import com.herron.exchange.common.api.common.model.Participant;
 
 import java.util.Comparator;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 public class PriceLevel extends TreeSet<Order> {
 
@@ -24,6 +26,13 @@ public class PriceLevel extends TreeSet<Order> {
 
     public double volumeAtPriceLevel() {
         return stream().mapToDouble(Order::currentVolume).sum();
+    }
+
+    public double volumeAtPriceLevel(Predicate<Order> filter) {
+        return stream()
+                .filter(filter)
+                .mapToDouble(Order::currentVolume)
+                .sum();
     }
 
 }
