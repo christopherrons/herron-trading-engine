@@ -7,6 +7,7 @@ import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,11 +23,7 @@ public class FifoNonActiveOrdersMatchingAlgorithm {
     }
 
     public List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder) {
-        if (nonActiveOrder.currentVolume() <= 0) {
-            return new ArrayList<>();
-        }
-
-        return switch (nonActiveOrder.orderExecutionType()) {
+         return switch (nonActiveOrder.orderExecutionType()) {
             case FOK -> handleFillOrKill(nonActiveOrder);
             case FAK -> handleFillAndKill(nonActiveOrder);
             default -> handleMarketOrder(nonActiveOrder);

@@ -77,7 +77,7 @@ public class MatchingEngine {
                     activeOrder = order;
                 }
             }
-        } while (!matchingMessages.isEmpty());
+        } while (!matchingMessages.isEmpty() && !activeOrder.orderOperation().equals(OrderOperationEnum.DELETE));
 
         return result;
     }

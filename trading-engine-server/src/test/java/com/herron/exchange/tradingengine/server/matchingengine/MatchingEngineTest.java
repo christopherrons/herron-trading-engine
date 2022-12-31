@@ -31,18 +31,19 @@ class MatchingEngineTest {
         matchingEngine.addMessage(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
         matchingEngine.addMessage(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
         matchingEngine.addMessage(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
-        matchingEngine.addMessage(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
+        matchingEngine.addMessage(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "5"));
+        matchingEngine.addMessage(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "6"));
 
-        var order = buildOrder(6, 102, 20, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FILL, OrderTypeEnum.LIMIT);
+        var order = buildOrder(6, 102, 20, OrderSideEnum.BID, "7", OrderExecutionTypeEnum.FILL, OrderTypeEnum.LIMIT);
         matchingEngine.addMessage(order);
         var result = matchingEngine.runMatchingAlgorithm(order);
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
-        assertEquals("6", ((Trade) result.get(2)).buyOrderId());
+        assertEquals(10, ((Trade) result.get(2)).volume());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(3)).cancelOperationType());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(4)).cancelOperationType());
-        assertEquals("6", ((Trade) result.get(5)).buyOrderId());
+        assertEquals(10, ((Trade) result.get(5)).volume());
     }
 
     @Test
