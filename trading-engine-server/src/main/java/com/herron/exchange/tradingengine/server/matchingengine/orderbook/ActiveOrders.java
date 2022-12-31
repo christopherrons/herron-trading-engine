@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Predicate;
 
 
 public class ActiveOrders implements ActiveOrderReadOnly {
@@ -185,12 +184,12 @@ public class ActiveOrders implements ActiveOrderReadOnly {
     }
 
     @Override
-    public Optional<PriceLevel>  getBestBidPriceLevel() {
+    public Optional<PriceLevel> getBestBidPriceLevel() {
         return getBestPriceLevel(OrderSideEnum.ASK);
     }
 
     @Override
-    public Optional<PriceLevel>  getBestAskPriceLevel() {
+    public Optional<PriceLevel> getBestAskPriceLevel() {
         return getBestPriceLevel(OrderSideEnum.ASK);
     }
 
@@ -204,10 +203,9 @@ public class ActiveOrders implements ActiveOrderReadOnly {
 
     private boolean isTotalAskFillPossible(Order order) {
         double availableVolume = 0;
-        Predicate<Order> participantFilter = o -> !o.participant().equals(order.participant());
         for (var level : bidPriceToPriceLevel.values()) {
             if (order.orderType().equals(OrderTypeEnum.MARKET) || order.price() <= level.getPrice()) {
-                availableVolume = level.volumeAtPriceLevel(participantFilter);
+                availableVolume = level.volumeAtPriceLevel();
             } else {
                 return false;
             }
@@ -221,10 +219,9 @@ public class ActiveOrders implements ActiveOrderReadOnly {
 
     private boolean isTotalBidFillPossible(Order order) {
         double availableVolume = 0;
-        Predicate<Order> participantFilter = o -> !o.participant().equals(order.participant());
         for (var level : askPriceToPriceLevel.values()) {
             if (order.price() >= level.getPrice()) {
-                availableVolume += level.volumeAtPriceLevel(participantFilter);
+                availableVolume += level.volumeAtPriceLevel();
             } else {
                 return false;
             }
