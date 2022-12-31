@@ -2,11 +2,13 @@ package com.herron.exchange.tradingengine.server.matchingengine.matchingalgorith
 
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
+import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.createMatchingMessages;
 
@@ -24,22 +26,37 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return nonActiveOrdersMatchingAlgorithm.runMatchingAlgorithmNonActiveOrder(nonActiveOrder);
     }
 
-    public List<Message> runMatchingAlgorithm() {
-        if (!activeOrders.hasBidAndAskOrders()) {
-            return new ArrayList<>();
+    public List<Message> runMatchingAlgorithm(Order order) {
+        Optional<Order> opposingBestOptional = getOpposingBestOrder(order);
+        if (opposingBestOptional.isEmpty()) {
+            return Collections.emptyList();
         }
 
-        Order bestBid = activeOrders.getBestBidOrder().get();
-        Order bestAsk = activeOrders.getBestAskOrder().get();
+        Order opposingBest = opposingBestOptional.get();
 
-        if (isMatch(bestBid.price(), bestAsk.price())) {
-            return createMatchingMessages(bestBid, bestAsk);
+        if (isMatch(order, opposingBest)) {
+            return createMatchingMessages(order, opposingBest);
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
-    private boolean isMatch(double bidPrice, double askPrice) {
-        return bidPrice >= askPrice;
+    private Optional<Order> getOpposingBestOrder(Order order) {
+        return switch (order.orderSide()) {
+            case BID -> activeOrders.getBestAskOrder();
+            case ASK -> activeOrders.getBestBidOrder();
+            default -> Optional.empty();
+        };
+    }
+
+    private boolean isMatch(Order order, Order opposingBestOrder) {
+        if (order.orderType().equals(OrderTypeEnum.MARKET)) {
+            return true;
+        }
+        return switch (order.orderSide()) {
+            case BID -> order.price() >= opposingBestOrder.price();
+            case ASK -> order.price() <= opposingBestOrder.price();
+            default -> false;
+        };
     }
 
 }

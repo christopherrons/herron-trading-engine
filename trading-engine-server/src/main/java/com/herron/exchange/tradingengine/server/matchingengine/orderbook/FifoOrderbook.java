@@ -17,23 +17,25 @@ public class FifoOrderbook implements Orderbook {
 
     private StateChangeTypeEnum stateChangeTypeEnum = StateChangeTypeEnum.INVALID_STATE_CHANGE;
     private final OrderbookData orderbookData;
-    private final ActiveOrders activeOrders = new ActiveOrders(new FifoOrderBookComparator());
-    private final MatchingAlgorithm matchingAlgorithm = new FifoMatchingAlgorithm(activeOrders);
+    private final ActiveOrders activeOrders;
+    private final MatchingAlgorithm matchingAlgorithm;
 
     public FifoOrderbook(OrderbookData orderbookData) {
         this.orderbookData = orderbookData;
+        this.activeOrders = new ActiveOrders(new FifoOrderBookComparator());
+        this.matchingAlgorithm = new FifoMatchingAlgorithm(activeOrders);
     }
 
     @Override
     public void updateOrder(Order order) {
-        if (order.isActiveOrder()){
+        if (order.isActiveOrder()) {
             activeOrders.updateOrder(order);
         }
     }
 
     @Override
     public void addOrder(Order order) {
-        if (order.isActiveOrder()){
+        if (order.isActiveOrder()) {
             activeOrders.addOrder(order);
         }
     }
@@ -45,7 +47,7 @@ public class FifoOrderbook implements Orderbook {
 
     @Override
     public void removeOrder(Order order) {
-        if (order.isActiveOrder()){
+        if (order.isActiveOrder()) {
             activeOrders.removeOrder(order);
         }
     }
@@ -163,8 +165,8 @@ public class FifoOrderbook implements Orderbook {
         return stateChangeTypeEnum;
     }
 
-    public List<Message> runMatchingAlgorithm() {
-        return matchingAlgorithm.runMatchingAlgorithm();
+    public List<Message> runMatchingAlgorithm(Order order) {
+        return matchingAlgorithm.runMatchingAlgorithm(order);
     }
 
     public List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder) {

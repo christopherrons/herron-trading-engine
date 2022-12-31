@@ -3,10 +3,7 @@ package com.herron.exchange.tradingengine.server.matchingengine.utils;
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.api.Trade;
-import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
-import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
-import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
-import com.herron.exchange.common.api.common.enums.OrderUpdatedOperationTypeEnum;
+import com.herron.exchange.common.api.common.enums.*;
 import com.herron.exchange.common.api.common.messages.herron.HerronCancelOrder;
 import com.herron.exchange.common.api.common.messages.herron.HerronTrade;
 import com.herron.exchange.common.api.common.messages.herron.HerronUpdateOrder;
@@ -77,56 +74,63 @@ public class MatchingEngineUtils {
                 orderCancelOperationTypeEnum);
     }
 
-    public static List<Message> createMatchingMessages(Order bidOrder, Order askOrder) {
-        if (isSelfMatch(bidOrder.participant(), askOrder.participant())) {
-            return createMatchingMessagesSelfMatched(bidOrder, askOrder);
-        }
+    public static List<Message> createMatchingMessages(Order thisOrder, Order thatOrder) {
+        final double tradeVolume = Math.min(thisOrder.currentVolume(), thatOrder.currentVolume());
+        return createMatchingMessages(thisOrder, thatOrder, tradeVolume);
+    }
 
-        final double tradeVolume = Math.min(bidOrder.currentVolume(), askOrder.currentVolume());
+    public static List<Message> createMatchingMessages(Order thisOrder, Order thatOrder, double tradeVolume) {
+        if (isSelfMatch(thisOrder.participant(), thatOrder.participant())) {
+            return createMatchingMessagesSelfMatched(thisOrder, thatOrder, tradeVolume);
+        }
 
         final List<Message> matchingMessages = new ArrayList<>();
 
-        if (isFilled(bidOrder, tradeVolume)) {
-            matchingMessages.add(buildCancelOrder(bidOrder, OrderCancelOperationTypeEnum.FILLED));
+        if (isFilled(thisOrder, tradeVolume)) {
+            matchingMessages.add(buildCancelOrder(thisOrder, OrderCancelOperationTypeEnum.FILLED));
         }
 
-        if (isFilled(askOrder, tradeVolume)) {
-            matchingMessages.add(buildCancelOrder(askOrder, OrderCancelOperationTypeEnum.FILLED));
+        if (isFilled(thatOrder, tradeVolume)) {
+            matchingMessages.add(buildCancelOrder(thatOrder, OrderCancelOperationTypeEnum.FILLED));
         }
 
-        if (!isFilled(bidOrder, tradeVolume)) {
-            matchingMessages.add(buildUpdateOrder(bidOrder, tradeVolume, OrderUpdatedOperationTypeEnum.PARTIAL_FILL));
+        if (!isFilled(thisOrder, tradeVolume)) {
+            matchingMessages.add(buildUpdateOrder(thisOrder, tradeVolume, OrderUpdatedOperationTypeEnum.PARTIAL_FILL));
         }
 
-        if (!isFilled(askOrder, tradeVolume)) {
-            matchingMessages.add(buildUpdateOrder(askOrder, tradeVolume, OrderUpdatedOperationTypeEnum.PARTIAL_FILL));
+        if (!isFilled(thatOrder, tradeVolume)) {
+            matchingMessages.add(buildUpdateOrder(thatOrder, tradeVolume, OrderUpdatedOperationTypeEnum.PARTIAL_FILL));
         }
 
-        final Trade trade = buildTrade(bidOrder, askOrder, tradeVolume);
+        final Trade trade;
+        if (thisOrder.orderSide().equals(OrderSideEnum.BID)) {
+            trade = buildTrade(thisOrder, thatOrder, tradeVolume);
+        } else {
+            trade = buildTrade(thatOrder, thisOrder, tradeVolume);
+        }
         matchingMessages.add(trade);
 
         return matchingMessages;
     }
 
-    public static List<Message> createMatchingMessagesSelfMatched(Order bidOrder, Order askOrder) {
-        final double tradeVolume = Math.min(bidOrder.currentVolume(), askOrder.currentVolume());
+    public static List<Message> createMatchingMessagesSelfMatched(Order thisOrder, Order thatOrder, double tradeVolume) {
 
         List<Message> matchingMessages = new ArrayList<>();
 
-        if (isFilled(bidOrder, tradeVolume)) {
-            matchingMessages.add(buildCancelOrder(bidOrder, OrderCancelOperationTypeEnum.SELF_MATCH));
+        if (isFilled(thisOrder, tradeVolume)) {
+            matchingMessages.add(buildCancelOrder(thisOrder, OrderCancelOperationTypeEnum.SELF_MATCH));
         }
 
-        if (isFilled(askOrder, tradeVolume)) {
-            matchingMessages.add(buildCancelOrder(askOrder, OrderCancelOperationTypeEnum.SELF_MATCH));
+        if (isFilled(thatOrder, tradeVolume)) {
+            matchingMessages.add(buildCancelOrder(thatOrder, OrderCancelOperationTypeEnum.SELF_MATCH));
         }
 
-        if (!isFilled(bidOrder, tradeVolume)) {
-            matchingMessages.add(buildUpdateOrder(bidOrder, tradeVolume, OrderUpdatedOperationTypeEnum.SELF_MATCH));
+        if (!isFilled(thisOrder, tradeVolume)) {
+            matchingMessages.add(buildUpdateOrder(thisOrder, tradeVolume, OrderUpdatedOperationTypeEnum.SELF_MATCH));
         }
 
-        if (!isFilled(askOrder, tradeVolume)) {
-            matchingMessages.add(buildUpdateOrder(askOrder, tradeVolume, OrderUpdatedOperationTypeEnum.SELF_MATCH));
+        if (!isFilled(thatOrder, tradeVolume)) {
+            matchingMessages.add(buildUpdateOrder(thatOrder, tradeVolume, OrderUpdatedOperationTypeEnum.SELF_MATCH));
         }
 
         return matchingMessages;

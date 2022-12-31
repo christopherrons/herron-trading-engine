@@ -42,11 +42,7 @@ public class FifoNonActiveOrdersMatchingAlgorithm {
         Order opposingBest = opposingBestOptional.get();
 
         if (isMatch(fillAndKillOrder, opposingBest)) {
-            return switch (fillAndKillOrder.orderSide()) {
-                case BID -> createMatchingMessages(fillAndKillOrder, opposingBest);
-                case ASK -> createMatchingMessages(opposingBest, fillAndKillOrder);
-                default -> createKillMessage(fillAndKillOrder);
-            };
+            return createMatchingMessages(fillAndKillOrder, opposingBest);
         }
         return createKillMessage(fillAndKillOrder);
     }
@@ -59,11 +55,7 @@ public class FifoNonActiveOrdersMatchingAlgorithm {
 
         Order opposingBest = opposingBestOptional.get();
 
-        return switch (marketOrder.orderSide()) {
-            case BID -> createMatchingMessages(marketOrder, opposingBest);
-            case ASK -> createMatchingMessages(opposingBest, marketOrder);
-            default -> createKillMessage(marketOrder);
-        };
+        return createMatchingMessages(marketOrder, opposingBest);
     }
 
     public List<Message> handleFillOrKill(Order fillOrKillOrder) {
@@ -78,11 +70,7 @@ public class FifoNonActiveOrdersMatchingAlgorithm {
 
         Order opposingBest = opposingBestOptional.get();
 
-        return switch (fillOrKillOrder.orderSide()) {
-            case BID -> createMatchingMessages(fillOrKillOrder, opposingBest);
-            case ASK -> createMatchingMessages(opposingBest, fillOrKillOrder);
-            default -> createKillMessage(fillOrKillOrder);
-        };
+        return createMatchingMessages(fillOrKillOrder, opposingBest);
     }
 
     private Optional<Order> getOpposingBestOrder(Order nonActiveOrder) {

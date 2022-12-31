@@ -184,6 +184,24 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         };
     }
 
+    @Override
+    public Optional<PriceLevel>  getBestBidPriceLevel() {
+        return getBestPriceLevel(OrderSideEnum.ASK);
+    }
+
+    @Override
+    public Optional<PriceLevel>  getBestAskPriceLevel() {
+        return getBestPriceLevel(OrderSideEnum.ASK);
+    }
+
+    private Optional<PriceLevel> getBestPriceLevel(OrderSideEnum orderSide) {
+        return switch (orderSide) {
+            case BID -> bidPriceToPriceLevel.values().stream().findFirst();
+            case ASK -> askPriceToPriceLevel.values().stream().findFirst();
+            case INVALID_ORDER_SIDE -> Optional.empty();
+        };
+    }
+
     private boolean isTotalAskFillPossible(Order order) {
         double availableVolume = 0;
         Predicate<Order> participantFilter = o -> !o.participant().equals(order.participant());

@@ -9,6 +9,7 @@ public class OrderbookFactory {
     public static Orderbook createOrderbook(OrderbookData orderbookData) {
         return switch (orderbookData.matchingAlgorithm()) {
             case FIFO -> new FifoOrderbook(orderbookData);
+            case PRO_RATA -> null;
             default -> null;
         };
     }

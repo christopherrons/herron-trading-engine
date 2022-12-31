@@ -14,37 +14,32 @@ public class MatchingEngine {
     private final OrderbookCache orderbookCache = new OrderbookCache();
     private final ReferanceDataCache referanceDataCache = new ReferanceDataCache();
 
-    public boolean add(Message message) {
+    public void addMessage(Message message) {
         if (message instanceof Order order) {
-            return handleOrder(order);
+            addOrder(order);
         } else if (message instanceof OrderbookData orderbookData) {
-            return handleOrderbookData(orderbookData);
+            addOrderbookData(orderbookData);
         } else if (message instanceof Instrument instrument) {
-            return handleInstrument(instrument);
+            addInstrument(instrument);
         } else if (message instanceof StateChange stateChange) {
-            return handleState(stateChange);
+            updateState(stateChange);
         }
-
-        return false;
     }
 
-    private boolean handleOrderbookData(OrderbookData orderbookData) {
+    private void addOrderbookData(OrderbookData orderbookData) {
         referanceDataCache.addOrderbookData(orderbookData);
         orderbookCache.createOrderbook(orderbookData);
-        return true;
     }
 
-    private boolean handleInstrument(Instrument instrument) {
+    private void addInstrument(Instrument instrument) {
         referanceDataCache.addInstrument(instrument);
-        return true;
     }
 
-    private boolean handleState(StateChange stateChange) {
+    private void updateState(StateChange stateChange) {
         orderbookCache.updateState(stateChange);
-        return true;
     }
 
-    private boolean handleOrder(Order order) {
+    private boolean addOrder(Order order) {
         final Orderbook orderbook = orderbookCache.getOrderbook(order.orderbookId());
         if (orderbook == null || order.isNonActiveOrder()) {
             return false;
@@ -62,11 +57,11 @@ public class MatchingEngine {
         if (order.isNonActiveOrder()) {
             return runMatchingAlgorithmNonActiveOrder(order);
         }
-        return runMatchingAlgorithm(order.orderbookId());
+        return runMatchingAlgorithmActiveOrder(order);
     }
 
-    private List<Message> runMatchingAlgorithm(String orderbookId) {
-        final Orderbook orderbook = orderbookCache.getOrderbook(orderbookId);
+    private List<Message> runMatchingAlgorithmActiveOrder(Order activeOrder) {
+        final Orderbook orderbook = orderbookCache.getOrderbook(activeOrder.orderbookId());
         final List<Message> result = new ArrayList<>();
         if (!orderbook.getState().equals(StateChangeTypeEnum.CONTINUOUS_TRADING)) {
             return result;
@@ -74,11 +69,14 @@ public class MatchingEngine {
 
         List<Message> matchingMessages;
         do {
-            matchingMessages = orderbook.runMatchingAlgorithm();
-            matchingMessages.forEach(message -> {
+            matchingMessages = orderbook.runMatchingAlgorithm(activeOrder);
+            for (var message : matchingMessages) {
                 result.add(message);
-                add(message);
-            });
+                addMessage(message);
+                if (message instanceof Order order && order.orderId().equals(activeOrder.orderId())) {
+                    activeOrder = order;
+                }
+            }
         } while (!matchingMessages.isEmpty());
 
         return result;
@@ -96,7 +94,7 @@ public class MatchingEngine {
             matchingMessages = orderbook.runMatchingAlgorithmNonActiveOrder(nonActiveOrder);
             for (var message : matchingMessages) {
                 result.add(message);
-                if (!add(message) && message instanceof Order order) {
+                if (message instanceof Order order && !addOrder(order)) {
                     nonActiveOrder = order;
                 }
             }

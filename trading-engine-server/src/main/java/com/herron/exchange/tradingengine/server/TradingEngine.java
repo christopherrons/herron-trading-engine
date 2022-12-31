@@ -45,7 +45,7 @@ public class TradingEngine {
 
             try {
                 auditTrail.publish(message);
-                matchingEngine.add(message);
+                matchingEngine.addMessage(message);
                 if (message instanceof Order order) {
                     var result = matchingEngine.runMatchingAlgorithm(order);
                     result.forEach(auditTrail::publish);

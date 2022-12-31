@@ -143,18 +143,19 @@ class FifoOrderbookTest {
     @Test
     void test_matching_algorithm_same_price_Level() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1"));
-        fifoOrderBook.addOrder(buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2"));
+        var order = buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2");
+        fifoOrderBook.addOrder(order);
 
-        List<Message> matchingMessages = fifoOrderBook.runMatchingAlgorithm();
+        List<Message> matchingMessages = fifoOrderBook.runMatchingAlgorithm(order);
         addMessages(matchingMessages);
         Trade trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
         assertEquals(5, fifoOrderBook.totalOrderVolume());
         assertNotEquals(0, trade.tradeId());
         assertFalse(trade.isBidSideAggressor());
 
-        fifoOrderBook.addOrder(buildOrderCreate(3, 100, 6, OrderSideEnum.BID, "3"));
-
-        matchingMessages = fifoOrderBook.runMatchingAlgorithm();
+        order = buildOrderCreate(3, 100, 6, OrderSideEnum.BID, "3");
+        fifoOrderBook.addOrder(order);
+        matchingMessages = fifoOrderBook.runMatchingAlgorithm(order);
         addMessages(matchingMessages);
         trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
         assertEquals(1, fifoOrderBook.totalOrderVolume());
@@ -165,9 +166,9 @@ class FifoOrderbookTest {
     @Test
     void test_matching_algorithm_self_match() {
         fifoOrderBook.addOrder(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1", new Participant(new Member("member"), new User("user"))));
-        fifoOrderBook.addOrder(buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2", new Participant(new Member("member"), new User("user"))));
-
-        List<Message> matchingMessages = fifoOrderBook.runMatchingAlgorithm();
+        var order = buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2", new Participant(new Member("member"), new User("user")));
+        fifoOrderBook.addOrder(order);
+        List<Message> matchingMessages = fifoOrderBook.runMatchingAlgorithm(order);
         addMessages(matchingMessages);
         Optional<Trade> trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst();
         assertFalse(trade.isPresent());

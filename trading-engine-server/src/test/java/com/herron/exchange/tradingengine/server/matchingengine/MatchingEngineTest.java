@@ -21,20 +21,20 @@ class MatchingEngineTest {
     void init() {
         var orderbookDate = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.FIFO, 0);
         var stateChange = new HerronStateChange("orderbookId", StateChangeTypeEnum.CONTINUOUS_TRADING, 0);
-        matchingEngine.add(orderbookDate);
-        matchingEngine.add(stateChange);
+        matchingEngine.addMessage(orderbookDate);
+        matchingEngine.addMessage(stateChange);
     }
 
     @Test
     void test_matching_algorithm_limit_fill() {
-        matchingEngine.add(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
-        matchingEngine.add(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
-        matchingEngine.add(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
-        matchingEngine.add(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
-        matchingEngine.add(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
+        matchingEngine.addMessage(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
+        matchingEngine.addMessage(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
+        matchingEngine.addMessage(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
+        matchingEngine.addMessage(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
+        matchingEngine.addMessage(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
 
         var order = buildOrder(6, 102, 20, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FILL, OrderTypeEnum.LIMIT);
-        matchingEngine.add(order);
+        matchingEngine.addMessage(order);
         var result = matchingEngine.runMatchingAlgorithm(order);
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -47,14 +47,14 @@ class MatchingEngineTest {
 
     @Test
     void test_matching_algorithm_limit_fok() {
-        matchingEngine.add(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
-        matchingEngine.add(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
-        matchingEngine.add(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
-        matchingEngine.add(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
-        matchingEngine.add(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
+        matchingEngine.addMessage(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
+        matchingEngine.addMessage(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
+        matchingEngine.addMessage(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
+        matchingEngine.addMessage(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
+        matchingEngine.addMessage(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
 
         var order = buildOrder(6, 102, 15, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
-        matchingEngine.add(order);
+        matchingEngine.addMessage(order);
         var result = matchingEngine.runMatchingAlgorithm(order);
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -67,14 +67,14 @@ class MatchingEngineTest {
 
     @Test
     void test_matching_algorithm_limit_fak() {
-        matchingEngine.add(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
-        matchingEngine.add(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
-        matchingEngine.add(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
-        matchingEngine.add(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
-        matchingEngine.add(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
+        matchingEngine.addMessage(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
+        matchingEngine.addMessage(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
+        matchingEngine.addMessage(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
+        matchingEngine.addMessage(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
+        matchingEngine.addMessage(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
 
         var order = buildOrder(6, 102, 25, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
-        matchingEngine.add(order);
+        matchingEngine.addMessage(order);
         var result = matchingEngine.runMatchingAlgorithm(order);
         assertEquals(7, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -88,14 +88,14 @@ class MatchingEngineTest {
 
     @Test
     void test_matching_algorithm_market_fill() {
-        matchingEngine.add(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
-        matchingEngine.add(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
-        matchingEngine.add(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
-        matchingEngine.add(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
-        matchingEngine.add(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
+        matchingEngine.addMessage(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
+        matchingEngine.addMessage(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
+        matchingEngine.addMessage(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
+        matchingEngine.addMessage(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
+        matchingEngine.addMessage(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
 
         var order = buildOrder(6, Integer.MAX_VALUE, 15, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET);
-        matchingEngine.add(order);
+        matchingEngine.addMessage(order);
         var result = matchingEngine.runMatchingAlgorithm(order);
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -108,14 +108,14 @@ class MatchingEngineTest {
 
     @Test
     void test_matching_algorithm_market_fok() {
-        matchingEngine.add(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
-        matchingEngine.add(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
-        matchingEngine.add(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
-        matchingEngine.add(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
-        matchingEngine.add(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
+        matchingEngine.addMessage(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
+        matchingEngine.addMessage(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
+        matchingEngine.addMessage(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
+        matchingEngine.addMessage(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
+        matchingEngine.addMessage(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
 
         var order = buildOrder(6, Integer.MAX_VALUE, 15, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET);
-        matchingEngine.add(order);
+        matchingEngine.addMessage(order);
         var result = matchingEngine.runMatchingAlgorithm(order);
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -128,14 +128,14 @@ class MatchingEngineTest {
 
     @Test
     void test_matching_algorithm_market_fak() {
-        matchingEngine.add(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
-        matchingEngine.add(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
-        matchingEngine.add(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
-        matchingEngine.add(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
-        matchingEngine.add(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
+        matchingEngine.addMessage(buildOrderCreate(1, 99, 10, OrderSideEnum.BID, "1"));
+        matchingEngine.addMessage(buildOrderCreate(2, 100, 10, OrderSideEnum.BID, "2"));
+        matchingEngine.addMessage(buildOrderCreate(3, 100, 10, OrderSideEnum.BID, "3"));
+        matchingEngine.addMessage(buildOrderCreate(4, 101, 10, OrderSideEnum.ASK, "4"));
+        matchingEngine.addMessage(buildOrderCreate(5, 102, 10, OrderSideEnum.ASK, "5"));
 
         var order = buildOrder(6, Integer.MAX_VALUE, 15, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET);
-        matchingEngine.add(order);
+        matchingEngine.addMessage(order);
         var result = matchingEngine.runMatchingAlgorithm(order);
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -144,7 +144,6 @@ class MatchingEngineTest {
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(3)).cancelOperationType());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(4)).updateOperationType());
         assertEquals(5, ((Trade) result.get(5)).volume());
-
     }
 
 
