@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 
-import static com.herron.exchange.common.api.common.enums.MessageTypesEnum.decodeMessage;
+import static com.herron.exchange.common.api.common.enums.MessageTypesEnum.deserializeMessage;
 
 public class BitstampAdaptor {
     private static final Logger LOGGER = LoggerFactory.getLogger(BitstampAdaptor.class);
@@ -23,7 +23,7 @@ public class BitstampAdaptor {
 
     @KafkaListener(topics = "bitstamp-market-data", groupId = "bitstamp-market-data-1")
     public void listenBitstampMarketData(ConsumerRecord<String, String> consumerRecord) {
-        Message message = decodeMessage(consumerRecord.key(), consumerRecord.value());
+        Message message = deserializeMessage(consumerRecord.key(), consumerRecord.value());
         if (message == null) {
             LOGGER.warn("Unable to map message: {}", consumerRecord);
         } else {
