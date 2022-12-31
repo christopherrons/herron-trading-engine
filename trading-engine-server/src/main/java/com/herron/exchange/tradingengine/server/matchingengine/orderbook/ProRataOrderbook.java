@@ -5,12 +5,14 @@ import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.api.OrderbookData;
 import com.herron.exchange.common.api.common.api.StateChange;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
+import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
 import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.ProRataMatchingAlgorithm;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -27,30 +29,33 @@ public class ProRataOrderbook implements Orderbook {
         this.matchingAlgorithm = new ProRataMatchingAlgorithm(activeOrders, orderbookData.minTradeVolume());
     }
 
-    @Override
-    public void updateOrder(Order order) {
+    public void updateOrderbook(List<Order> orders) {
+        orders.forEach(this::updateOrderbook);
+    }
+    public void updateOrderbook(Order order) {
         if (order.isActiveOrder()) {
-            activeOrders.updateOrder(order);
+            switch (order.orderOperation()) {
+                case CREATE -> addOrder(order);
+                case UPDATE -> updateOrder(order);
+                case DELETE -> removeOrder(order);
+            }
         }
     }
 
-    @Override
-    public void addOrder(Order order) {
-        if (order.isActiveOrder()) {
-            activeOrders.addOrder(order);
-        }
+    private void updateOrder(Order order) {
+        activeOrders.updateOrder(order);
     }
 
-    @Override
+    private void addOrder(Order order) {
+        activeOrders.addOrder(order);
+    }
+
     public void removeOrder(String orderId) {
         activeOrders.removeOrder(orderId);
     }
 
-    @Override
-    public void removeOrder(Order order) {
-        if (order.isActiveOrder()) {
-            activeOrders.removeOrder(order);
-        }
+    private void removeOrder(Order order) {
+        activeOrders.removeOrder(order);
     }
 
     @Override
@@ -169,11 +174,35 @@ public class ProRataOrderbook implements Orderbook {
     }
 
     @Override
-    public List<Message> runMatchingAlgorithm(Order order) {
-        if (order.currentVolume() <= 0) {
+    public List<Message> runMatchingAlgorithm(Order matchingOrder) {
+        if (matchingOrder.currentVolume() <= 0 || !getState().equals(StateChangeTypeEnum.CONTINUOUS_TRADING)) {
             return Collections.emptyList();
         }
-        return matchingAlgorithm.runMatchingAlgorithm(order);
+
+        final List<Message> result = new ArrayList<>();
+        List<Message> matchingMessages;
+        do {
+            matchingMessages = matchingOrder.isActiveOrder() ? matchingAlgorithm.matchActiveOrder(matchingOrder) : matchNonActiveOrders(matchingOrder);
+            for (var message : matchingMessages) {
+                result.add(message);
+                if (message instanceof Order order) {
+                    updateOrderbook(order);
+                    if (order.orderId().equals(matchingOrder.orderId())) {
+                        matchingOrder = order;
+                    }
+                }
+            }
+        } while (!matchingMessages.isEmpty() && !matchingOrder.orderOperation().equals(OrderOperationEnum.DELETE));
+
+        return result;
+    }
+
+    private List<Message> matchNonActiveOrders(Order nonActiveOrder) {
+        return switch (nonActiveOrder.orderExecutionType()) {
+            case FOK -> matchingAlgorithm.matchFillOrKill(nonActiveOrder);
+            case FAK -> matchingAlgorithm.matchFillAndKill(nonActiveOrder);
+            default -> matchingAlgorithm.matchMarketOrder(nonActiveOrder);
+        };
     }
 
 }

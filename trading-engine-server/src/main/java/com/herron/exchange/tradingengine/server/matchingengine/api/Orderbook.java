@@ -10,6 +10,8 @@ import java.util.List;
 
 public interface Orderbook {
 
+    void updateOrderbook(Order order);
+
     void updateState(StateChange stateChange);
 
     StateChangeTypeEnum getState();
@@ -22,15 +24,7 @@ public interface Orderbook {
 
     boolean hasBidAndAskOrders();
 
-    void addOrder(Order order);
-
     Order getOrder(String orderId);
-
-    void updateOrder(Order order);
-
-    void removeOrder(Order order);
-
-    void removeOrder(String orderId);
 
     double totalOrderVolume();
 

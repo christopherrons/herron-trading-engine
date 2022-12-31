@@ -7,6 +7,12 @@ import java.util.List;
 
 public interface MatchingAlgorithm {
 
-    List<Message> runMatchingAlgorithm(Order order);
+    List<Message> matchActiveOrder(Order order);
+
+    List<Message> matchFillOrKill(Order order);
+
+    List<Message> matchFillAndKill(Order order);
+
+    List<Message> matchMarketOrder(Order order);
 
 }

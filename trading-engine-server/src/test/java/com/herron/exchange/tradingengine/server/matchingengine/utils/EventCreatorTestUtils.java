@@ -21,6 +21,14 @@ public class EventCreatorTestUtils {
         return buildOrder(OrderOperationEnum.CREATE, timeStampInMs, price, volume, orderSideEnum, orderId);
     }
 
+    public static Order buildOrderUpdate(long timeStampInMs,
+                                         double price,
+                                         double volume,
+                                         OrderSideEnum orderSideEnum,
+                                         String orderId) {
+        return buildOrder(OrderOperationEnum.UPDATE, timeStampInMs, price, volume, orderSideEnum, orderId);
+    }
+
     public static Order buildOrderCreate(long timeStampInMs,
                                          double price,
                                          double volume,

@@ -23,14 +23,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         this.activeOrders = activeOrders;
     }
 
-    public List<Message> runMatchingAlgorithm(Order order) {
-        if (order.isActiveOrder()) {
-            return matchActiveOrder(order);
-        }
-        return matchNonActiveOrders(order);
-    }
-
-    private List<Message> matchActiveOrder(Order order) {
+    public List<Message> matchActiveOrder(Order order) {
         Optional<Order> opposingBestOptional = getOpposingBestOrder(order);
         if (opposingBestOptional.isEmpty()) {
             return Collections.emptyList();
@@ -44,15 +37,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return Collections.emptyList();
     }
 
-    private List<Message> matchNonActiveOrders(Order nonActiveOrder) {
-        return switch (nonActiveOrder.orderExecutionType()) {
-            case FOK -> handleFillOrKill(nonActiveOrder);
-            case FAK -> handleFillAndKill(nonActiveOrder);
-            default -> handleMarketOrder(nonActiveOrder);
-        };
-    }
-
-    public List<Message> handleFillOrKill(Order fillOrKillOrder) {
+    public List<Message> matchFillOrKill(Order fillOrKillOrder) {
         if (!activeOrders.isTotalFillPossible(fillOrKillOrder)) {
             return createKillMessage(fillOrKillOrder);
         }
@@ -67,7 +52,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return createMatchingMessages(fillOrKillOrder, opposingBest);
     }
 
-    public List<Message> handleFillAndKill(Order fillAndKillOrder) {
+    public List<Message> matchFillAndKill(Order fillAndKillOrder) {
         Optional<Order> opposingBestOptional = getOpposingBestOrder(fillAndKillOrder);
         if (opposingBestOptional.isEmpty()) {
             return createKillMessage(fillAndKillOrder);
@@ -81,7 +66,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return createKillMessage(fillAndKillOrder);
     }
 
-    public List<Message> handleMarketOrder(Order marketOrder) {
+    public List<Message> matchMarketOrder(Order marketOrder) {
         Optional<Order> opposingBestOptional = getOpposingBestOrder(marketOrder);
         if (opposingBestOptional.isEmpty()) {
             return createKillMessage(marketOrder);

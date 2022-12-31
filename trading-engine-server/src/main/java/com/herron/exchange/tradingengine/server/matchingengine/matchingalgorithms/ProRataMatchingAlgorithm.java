@@ -27,14 +27,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         this.minTradeVolume = minTradeVolume;
     }
 
-    public List<Message> runMatchingAlgorithm(Order order) {
-        if (order.isActiveOrder()) {
-            return matchActiveOrder(order);
-        }
-        return matchNonActiveOrders(order);
-    }
-
-    private List<Message> matchActiveOrder(Order order) {
+    public List<Message> matchActiveOrder(Order order) {
         Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(order);
         if (opposingBestOptional.isEmpty()) {
             return Collections.emptyList();
@@ -49,15 +42,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         return Collections.emptyList();
     }
 
-    private List<Message> matchNonActiveOrders(Order nonActiveOrder) {
-        return switch (nonActiveOrder.orderExecutionType()) {
-            case FOK -> handleFillOrKill(nonActiveOrder);
-            case FAK -> handleFillAndKill(nonActiveOrder);
-            default -> handleMarketOrder(nonActiveOrder);
-        };
-    }
-
-    public List<Message> handleFillOrKill(Order fillOrKillOrder) {
+    public List<Message> matchFillOrKill(Order fillOrKillOrder) {
         if (!activeOrders.isTotalFillPossible(fillOrKillOrder)) {
             return createKillMessage(fillOrKillOrder);
         }
@@ -72,7 +57,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         return runProRataMatching(fillOrKillOrder, opposingBest);
     }
 
-    public List<Message> handleFillAndKill(Order fillAndKillOrder) {
+    public List<Message> matchFillAndKill(Order fillAndKillOrder) {
         Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(fillAndKillOrder);
         if (opposingBestOptional.isEmpty()) {
             return createKillMessage(fillAndKillOrder);
@@ -87,7 +72,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         return createKillMessage(fillAndKillOrder);
     }
 
-    public List<Message> handleMarketOrder(Order marketOrder) {
+    public List<Message> matchMarketOrder(Order marketOrder) {
         Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(marketOrder);
         if (opposingBestOptional.isEmpty()) {
             return createKillMessage(marketOrder);
