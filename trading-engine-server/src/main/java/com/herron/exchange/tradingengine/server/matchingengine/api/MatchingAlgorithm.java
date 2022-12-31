@@ -9,5 +9,4 @@ public interface MatchingAlgorithm {
 
     List<Message> runMatchingAlgorithm(Order order);
 
-    List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder);
 }

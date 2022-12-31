@@ -6,6 +6,7 @@ import com.herron.exchange.common.api.common.enums.*;
 import com.herron.exchange.common.api.common.messages.herron.HerronAddOrder;
 import com.herron.exchange.common.api.common.messages.herron.HerronTrade;
 import com.herron.exchange.common.api.common.model.Member;
+import com.herron.exchange.common.api.common.model.MonetaryAmount;
 import com.herron.exchange.common.api.common.model.Participant;
 import com.herron.exchange.common.api.common.model.User;
 
@@ -42,7 +43,7 @@ public class EventCreatorTestUtils {
                 orderSideEnum,
                 volume,
                 volume,
-                price,
+                new MonetaryAmount(price, "eur"),
                 timeStampInMs,
                 "inststrumenId",
                 "orderbookId",
@@ -64,7 +65,7 @@ public class EventCreatorTestUtils {
                 orderSideEnum,
                 volume,
                 volume,
-                price,
+                new MonetaryAmount(price, "eur"),
                 timeStampInMs,
                 "inststrumenId",
                 "orderbookId",
@@ -85,7 +86,7 @@ public class EventCreatorTestUtils {
                 orderSideEnum,
                 volume,
                 volume,
-                price,
+                new MonetaryAmount(price, "eur"),
                 timeStampInMs,
                 "inststrumenId",
                 "orderbookId",
@@ -109,7 +110,7 @@ public class EventCreatorTestUtils {
                 "askOrderid",
                 isBidSideAggressor,
                 volume,
-                price,
+                new MonetaryAmount(price, "eur"),
                 timeStampInMs,
                 "instrumentId",
                 "ordebookId"

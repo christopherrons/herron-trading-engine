@@ -9,22 +9,22 @@ import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
-import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.FifoMatchingAlgorithm;
+import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.ProRataMatchingAlgorithm;
 
 import java.util.Collections;
 import java.util.List;
 
-public class FifoOrderbook implements Orderbook {
+public class ProRataOrderbook implements Orderbook {
 
     private StateChangeTypeEnum stateChangeTypeEnum = StateChangeTypeEnum.INVALID_STATE_CHANGE;
     private final OrderbookData orderbookData;
     private final ActiveOrders activeOrders;
     private final MatchingAlgorithm matchingAlgorithm;
 
-    public FifoOrderbook(OrderbookData orderbookData) {
+    public ProRataOrderbook(OrderbookData orderbookData) {
         this.orderbookData = orderbookData;
         this.activeOrders = new ActiveOrders(new FifoOrderBookComparator());
-        this.matchingAlgorithm = new FifoMatchingAlgorithm(activeOrders);
+        this.matchingAlgorithm = new ProRataMatchingAlgorithm(activeOrders, orderbookData.minTradeVolume());
     }
 
     @Override
@@ -175,4 +175,5 @@ public class FifoOrderbook implements Orderbook {
         }
         return matchingAlgorithm.runMatchingAlgorithm(order);
     }
+
 }

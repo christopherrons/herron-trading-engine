@@ -16,8 +16,6 @@ public interface Orderbook {
 
     List<Message> runMatchingAlgorithm(Order order);
 
-    List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder);
-
     String getOrderbookId();
 
     MatchingAlgorithmEnum getMatchingAlgorithm();

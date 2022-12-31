@@ -91,7 +91,7 @@ public class MatchingEngine {
 
         List<Message> matchingMessages;
         do {
-            matchingMessages = orderbook.runMatchingAlgorithmNonActiveOrder(nonActiveOrder);
+            matchingMessages = orderbook.runMatchingAlgorithm(nonActiveOrder);
             for (var message : matchingMessages) {
                 result.add(message);
                 if (message instanceof Order order && !addOrder(order)) {

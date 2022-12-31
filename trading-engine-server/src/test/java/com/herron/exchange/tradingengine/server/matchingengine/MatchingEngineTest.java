@@ -19,7 +19,7 @@ class MatchingEngineTest {
 
     @BeforeEach
     void init() {
-        var orderbookDate = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.FIFO, 0);
+        var orderbookDate = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.FIFO,"eur", 0.0, 0L);
         var stateChange = new HerronStateChange("orderbookId", StateChangeTypeEnum.CONTINUOUS_TRADING, 0);
         matchingEngine.addMessage(orderbookDate);
         matchingEngine.addMessage(stateChange);

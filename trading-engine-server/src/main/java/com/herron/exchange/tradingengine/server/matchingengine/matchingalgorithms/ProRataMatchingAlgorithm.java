@@ -2,6 +2,7 @@ package com.herron.exchange.tradingengine.server.matchingengine.matchingalgorith
 
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
+import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
@@ -12,6 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.buildCancelOrder;
 import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.createMatchingMessages;
 
 public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
@@ -19,16 +21,20 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
     private final ActiveOrderReadOnly activeOrders;
     private final double minTradeVolume;
 
+
     public ProRataMatchingAlgorithm(ActiveOrderReadOnly activeOrders, double minTradeVolume) {
         this.activeOrders = activeOrders;
         this.minTradeVolume = minTradeVolume;
     }
 
-    public List<Message> runMatchingAlgorithmNonActiveOrder(Order nonActiveOrder) {
-        return List.of();
+    public List<Message> runMatchingAlgorithm(Order order) {
+        if (order.isActiveOrder()) {
+            return matchActiveOrder(order);
+        }
+        return matchNonActiveOrders(order);
     }
 
-    public List<Message> runMatchingAlgorithm(Order order) {
+    private List<Message> matchActiveOrder(Order order) {
         Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(order);
         if (opposingBestOptional.isEmpty()) {
             return Collections.emptyList();
@@ -41,6 +47,55 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         }
 
         return Collections.emptyList();
+    }
+
+    private List<Message> matchNonActiveOrders(Order nonActiveOrder) {
+        return switch (nonActiveOrder.orderExecutionType()) {
+            case FOK -> handleFillOrKill(nonActiveOrder);
+            case FAK -> handleFillAndKill(nonActiveOrder);
+            default -> handleMarketOrder(nonActiveOrder);
+        };
+    }
+
+    public List<Message> handleFillOrKill(Order fillOrKillOrder) {
+        if (!activeOrders.isTotalFillPossible(fillOrKillOrder)) {
+            return createKillMessage(fillOrKillOrder);
+        }
+
+        Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(fillOrKillOrder);
+        if (opposingBestOptional.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        PriceLevel opposingBest = opposingBestOptional.get();
+
+        return runProRataMatching(fillOrKillOrder, opposingBest);
+    }
+
+    public List<Message> handleFillAndKill(Order fillAndKillOrder) {
+        Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(fillAndKillOrder);
+        if (opposingBestOptional.isEmpty()) {
+            return createKillMessage(fillAndKillOrder);
+        }
+
+        PriceLevel opposingBest = opposingBestOptional.get();
+
+        if (isMatch(fillAndKillOrder, opposingBest.getPrice())) {
+            return runProRataMatching(fillAndKillOrder, opposingBest);
+        }
+
+        return createKillMessage(fillAndKillOrder);
+    }
+
+    public List<Message> handleMarketOrder(Order marketOrder) {
+        Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(marketOrder);
+        if (opposingBestOptional.isEmpty()) {
+            return createKillMessage(marketOrder);
+        }
+
+        PriceLevel opposingBest = opposingBestOptional.get();
+
+        return runProRataMatching(marketOrder, opposingBest);
     }
 
     private List<Message> runProRataMatching(Order order, PriceLevel opposingBest) {
@@ -85,6 +140,12 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
             case ASK -> order.price() <= opposingPrice;
             default -> false;
         };
+    }
+
+    private List<Message> createKillMessage(Order nonActiveOrder) {
+        List<Message> matchingMessages = new ArrayList<>();
+        matchingMessages.add(buildCancelOrder(nonActiveOrder, OrderCancelOperationTypeEnum.KILLED));
+        return matchingMessages;
     }
 
 }
