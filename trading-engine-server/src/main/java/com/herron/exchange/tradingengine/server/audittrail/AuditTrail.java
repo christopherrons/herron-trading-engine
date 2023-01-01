@@ -23,7 +23,7 @@ public class AuditTrail {
     public AuditTrail(KafkaTemplate<String, Object> kafkaTemplate, PartitionKey partitionKey) {
         this.kafkaTemplate = kafkaTemplate;
         this.partitionKey = partitionKey;
-        this.eventLogger = new EventLogger(String.valueOf(partitionKey.partitionId()));
+        this.eventLogger = new EventLogger();
     }
 
     public synchronized void queueMessage(Message message) {
@@ -31,7 +31,7 @@ public class AuditTrail {
         var broadCast = new HerronBroadcastMessage(message, message.messageType().getMessageTypeId(), sequenceNumberHandler.getAndIncrement(), Instant.now().toEpochMilli());
         //kafkaTemplate.send(TopicEnum.HERRON_AUDIT_TRAIL.getTopicName(), outGoingMessage.messageType().getMessageTypeId(), message);
         if (message instanceof Trade trade) {
-            LOGGER.info("{}", trade);
+            //LOGGER.info("{}", trade);
         }
     }
 }
