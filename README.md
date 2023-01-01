@@ -1,7 +1,6 @@
-# Bitstamp Consumer
+# Trading Engine
 
-This application subscribes to anonymous order or trades for trading pairs configured in the application,
-see [official documentation](https://www.bitstamp.net/websocket/v2/).
+The Trading Engine takes in orders and matches them together. The events are then broadcasted on the audit trail.
 
 ## Table of Content
 

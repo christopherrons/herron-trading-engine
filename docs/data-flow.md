@@ -14,20 +14,26 @@ flowchart LR;
     TES{Trading Engine Starts} ---> |http| EXM
     
     subgraph BA[Bitstamp Adaptor]
-        TP1[Trading Pair 1] -.- TPN[Trading Pair... N]
+        BSP1[Partition 1] -.- BSPN[Partition.. N]
     end
     
    subgraph EXM[Exchange Messages]
-        TP3[Trading Pair 1] -.- TP5[Trading Pair... N]
+        EXP1[Partition 1] -.- EXP1N[Partition... N]
     end
     
-    BA --> MAE
-    EXM --> MAE
+    BA --> |Events| TAE
+    EXM --> |Events|TAE
+    subgraph TAE[Trading Engine]
+    end
+    
+    TAE --> |Events| MAE
     subgraph MAE[Matching Engine]
+       MAEP1[Partition 1] -.- MAEPN[Partition... N]
     end
     
-    MAE --> AUT
+    MAE --> |Events| AUT
     subgraph AUT[Audit Trail]
+        AUTP1[Partition 1] -.- AUTPN[Partition... N]
     end
     
     AUT --> |Deserialize| KP

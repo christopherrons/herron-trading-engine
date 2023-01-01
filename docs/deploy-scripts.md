@@ -27,7 +27,7 @@ Start the application by running:
 
 ### Shutdown Script
 
-2. [shutdown-server.sh](../trading-engine-deploy/src/main/java/com/herron/exchange/tradingengine/deploy/scripts/shutdown-server.sh).
+1. [shutdown-server.sh](../trading-engine-deploy/src/main/java/com/herron/exchange/tradingengine/deploy/scripts/shutdown-server.sh).
 
 ## Crontab
 
