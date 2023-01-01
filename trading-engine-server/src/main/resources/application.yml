@@ -1,6 +1,6 @@
 spring:
   kafka:
-    bootstrap-servers: "192.168.50.16:9092"
+    bootstrap-servers: "bitstamp-consumer-1.int.herron.se:9092"
     consumer:
       properties:
         spring:
