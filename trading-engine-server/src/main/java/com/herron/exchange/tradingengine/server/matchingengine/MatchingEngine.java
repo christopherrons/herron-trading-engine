@@ -1,18 +1,74 @@
 package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.*;
+import com.herron.exchange.tradingengine.server.audittrail.AuditTrail;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.OrderbookCache;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.ReferanceDataCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class MatchingEngine {
+    private static final Logger LOGGER = LoggerFactory.getLogger(MatchingEngine.class);
+    private final Queue<Message> messageQueue = new ConcurrentLinkedQueue<>();
     private final OrderbookCache orderbookCache = new OrderbookCache();
     private final ReferanceDataCache referanceDataCache = new ReferanceDataCache();
+    private final String partitionId;
+    private final AuditTrail auditTrail;
 
-    public void addMessage(Message message) {
+    public MatchingEngine(String partitionId, AuditTrail auditTrail) {
+        this.partitionId = partitionId;
+        this.auditTrail = auditTrail;
+
+        var messagePollExecutorService = Executors.newSingleThreadExecutor(new ThreadWrapper(partitionId));
+        messagePollExecutorService.execute(this::pollMessages);
+        var logExecutorService = Executors.newScheduledThreadPool(1, new ThreadWrapper(partitionId));
+        logExecutorService.scheduleAtFixedRate(this::logMessageQueueSize, 0, 30, TimeUnit.SECONDS);
+    }
+
+    public void queueMessage(Message message) {
+        messageQueue.add(message);
+    }
+
+    private void pollMessages() {
+        while (true) {
+
+            if (messageQueue.isEmpty()) {
+                continue;
+            }
+
+            Message message = messageQueue.poll();
+
+            if (message == null) {
+                continue;
+            }
+
+            try {
+                auditTrail.queueMessage(message);
+                addMessage(message);
+                if (message instanceof Order order) {
+                    var result = runMatchingAlgorithm(order);
+                    result.forEach(auditTrail::queueMessage);
+                }
+
+            } catch (Exception e) {
+                LOGGER.warn("Unhandled exception for message: {}, {}", message, e);
+            }
+        }
+    }
+
+    private void logMessageQueueSize() {
+        LOGGER.info("Message Queue size: {}", messageQueue.size());
+    }
+
+    private void addMessage(Message message) {
         if (message instanceof Order order) {
             var orderbook = orderbookCache.getOrderbook(order.orderbookId());
             if (orderbook != null) {
@@ -40,7 +96,7 @@ public class MatchingEngine {
         orderbookCache.updateState(stateChange);
     }
 
-    public List<Message> runMatchingAlgorithm(Order order) {
+    private List<Message> runMatchingAlgorithm(Order order) {
         final Orderbook orderbook = orderbookCache.getOrderbook(order.orderbookId());
         return orderbook != null ? orderbook.runMatchingAlgorithm(order) : Collections.emptyList();
     }

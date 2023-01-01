@@ -1,64 +1,32 @@
 package com.herron.exchange.tradingengine.server;
 
 import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.api.Order;
-import com.herron.exchange.common.api.common.logging.EventLogger;
 import com.herron.exchange.tradingengine.server.audittrail.AuditTrail;
 import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 
-import java.util.Queue;
-import java.util.concurrent.*;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TradingEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(TradingEngine.class);
-    private final Queue<Message> messageQueue = new ConcurrentLinkedQueue<>();
-    private final MatchingEngine matchingEngine;
-    private final EventLogger eventLogger = new EventLogger("Incoming");
-    private final AuditTrail auditTrail;
-    private final ScheduledExecutorService logExecutorService = Executors.newScheduledThreadPool(1);
-    private final ExecutorService messagePollExecutorService = Executors.newSingleThreadExecutor();
+    private static final String DEFAULT_PARTITION_ID = "partition-default-1";
+    private final Map<String, MatchingEngine> partitionIdToMatchingEngine = new ConcurrentHashMap<>();
 
-    public TradingEngine(MatchingEngine matchingEngine, AuditTrail auditTrail) {
-        this.matchingEngine = matchingEngine;
-        this.auditTrail = auditTrail;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    public TradingEngine(KafkaTemplate<String, Object> kafkaTemplate) {
+        this.kafkaTemplate = kafkaTemplate;
+        var t = new MatchingEngine(DEFAULT_PARTITION_ID, new AuditTrail(kafkaTemplate, DEFAULT_PARTITION_ID));
     }
 
     public void queueMessage(Message message) {
-        messageQueue.add(message);
-        eventLogger.logEvent();
+        queueMessage(DEFAULT_PARTITION_ID, message);
     }
 
-    public void init() {
-        messagePollExecutorService.execute(this::pollMessages);
-        logExecutorService.scheduleAtFixedRate(this::logMessageQueueSize, 30, 30, TimeUnit.SECONDS);
-    }
-
-    private void pollMessages() {
-        while (true) {
-            Message message = messageQueue.poll();
-
-            if (message == null) {
-                continue;
-            }
-
-            try {
-                auditTrail.publish(message);
-                matchingEngine.addMessage(message);
-                if (message instanceof Order order) {
-                    var result = matchingEngine.runMatchingAlgorithm(order);
-                    result.forEach(auditTrail::publish);
-                }
-
-            } catch (Exception e) {
-                LOGGER.warn("Unhandled exception for message: {}, {}", message, e);
-            }
-        }
-
-    }
-
-    private void logMessageQueueSize() {
-        LOGGER.info("Message Queue size: {}", messageQueue.size());
+    public void queueMessage(String partitionId, Message message) {
+        partitionIdToMatchingEngine.computeIfAbsent(partitionId, k -> new MatchingEngine(partitionId, new AuditTrail(kafkaTemplate, partitionId))).queueMessage(message);
     }
 }

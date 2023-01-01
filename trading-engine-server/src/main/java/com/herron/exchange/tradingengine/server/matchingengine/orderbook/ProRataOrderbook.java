@@ -9,7 +9,7 @@ import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
-import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
+import com.herron.exchange.tradingengine.server.matchingengine.comparator.ProRataOrderBookComparator;
 import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.ProRataMatchingAlgorithm;
 
 import java.util.ArrayList;
@@ -25,13 +25,14 @@ public class ProRataOrderbook implements Orderbook {
 
     public ProRataOrderbook(OrderbookData orderbookData) {
         this.orderbookData = orderbookData;
-        this.activeOrders = new ActiveOrders(new FifoOrderBookComparator());
+        this.activeOrders = new ActiveOrders(new ProRataOrderBookComparator());
         this.matchingAlgorithm = new ProRataMatchingAlgorithm(activeOrders, orderbookData.minTradeVolume());
     }
 
     public void updateOrderbook(List<Order> orders) {
         orders.forEach(this::updateOrderbook);
     }
+
     public void updateOrderbook(Order order) {
         if (order.isActiveOrder()) {
             switch (order.orderOperation()) {

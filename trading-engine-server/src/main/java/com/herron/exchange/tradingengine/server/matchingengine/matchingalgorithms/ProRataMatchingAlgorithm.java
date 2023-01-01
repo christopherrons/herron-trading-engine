@@ -36,7 +36,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         PriceLevel opposingBest = opposingBestOptional.get();
 
         if (isMatch(order, opposingBest.getPrice())) {
-            return runProRataMatching(order, opposingBest);
+            return matchProRata(order, opposingBest);
         }
 
         return Collections.emptyList();
@@ -54,7 +54,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
 
         PriceLevel opposingBest = opposingBestOptional.get();
 
-        return runProRataMatching(fillOrKillOrder, opposingBest);
+        return matchProRata(fillOrKillOrder, opposingBest);
     }
 
     public List<Message> matchFillAndKill(Order fillAndKillOrder) {
@@ -66,7 +66,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         PriceLevel opposingBest = opposingBestOptional.get();
 
         if (isMatch(fillAndKillOrder, opposingBest.getPrice())) {
-            return runProRataMatching(fillAndKillOrder, opposingBest);
+            return matchProRata(fillAndKillOrder, opposingBest);
         }
 
         return createKillMessage(fillAndKillOrder);
@@ -80,10 +80,10 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
 
         PriceLevel opposingBest = opposingBestOptional.get();
 
-        return runProRataMatching(marketOrder, opposingBest);
+        return matchProRata(marketOrder, opposingBest);
     }
 
-    private List<Message> runProRataMatching(Order order, PriceLevel opposingBest) {
+    private List<Message> matchProRata(Order order, PriceLevel opposingBest) {
 
         final List<Message> result = new ArrayList<>();
         final double volumeAtPriceLevel = opposingBest.volumeAtPriceLevel();
