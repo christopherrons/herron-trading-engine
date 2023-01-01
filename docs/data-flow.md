@@ -38,5 +38,6 @@ flowchart LR;
     
     AUT --> |Deserialize| KP
     subgraph KP[Kafka Producer]
+            KPTP1[Partition 1] -.- KPTPN[Partition... N]
     end
 ```
