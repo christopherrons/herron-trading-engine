@@ -1,10 +1,12 @@
 package com.herron.exchange.tradingengine.server.adaptor;
 
 import com.herron.exchange.common.api.common.api.*;
+import com.herron.exchange.common.api.common.enums.TopicEnum;
 import com.herron.exchange.common.api.common.messages.herron.HerronAddOrder;
 import com.herron.exchange.common.api.common.messages.herron.HerronOrderbookData;
 import com.herron.exchange.common.api.common.messages.herron.HerronStateChange;
 import com.herron.exchange.common.api.common.messages.herron.HerronStockInstrument;
+import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -28,19 +30,21 @@ public class BitstampAdaptor {
             LOGGER.warn("Unable to map message: {}", consumerRecord);
         } else {
             try {
-                queueMessage(message);
+                message = mapToHerronMessage(message);
+                tradingEngine.queueMessage(new PartitionKey(TopicEnum.HERRON_AUDIT_TRAIL, 1), message);
             } catch (Exception e) {
                 LOGGER.warn("Unhandled exception for record: {], decoded-message: {}, {}", consumerRecord, message, e);
             }
         }
     }
 
-    private void queueMessage(Message message) {
-        switch (message.messageType()) {
-            case BITSTAMP_STOCK_INSTRUMENT -> tradingEngine.queueMessage(new HerronStockInstrument((Instrument) message));
-            case BITSTAMP_ORDERBOOK_DATA -> tradingEngine.queueMessage(new HerronOrderbookData((OrderbookData) message));
-            case BITSTAMP_STATE_CHANGE -> tradingEngine.queueMessage(new HerronStateChange((StateChange) message));
-            case BITSTAMP_ADD_ORDER -> tradingEngine.queueMessage(new HerronAddOrder((AddOrder) message));
-        }
+    private Message mapToHerronMessage(Message message) {
+        return switch (message.messageType()) {
+            case BITSTAMP_STOCK_INSTRUMENT -> new HerronStockInstrument((Instrument) message);
+            case BITSTAMP_ORDERBOOK_DATA -> new HerronOrderbookData((OrderbookData) message);
+            case BITSTAMP_STATE_CHANGE -> new HerronStateChange((StateChange) message);
+            case BITSTAMP_ADD_ORDER -> new HerronAddOrder((AddOrder) message);
+            default -> null;
+        };
     }
 }

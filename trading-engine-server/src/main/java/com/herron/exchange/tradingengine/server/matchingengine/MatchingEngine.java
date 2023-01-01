@@ -1,12 +1,14 @@
 package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.*;
+import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.audittrail.AuditTrail;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.OrderbookCache;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.ReferanceDataCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.util.Collections;
 import java.util.List;
@@ -20,16 +22,16 @@ public class MatchingEngine {
     private final Queue<Message> messageQueue = new ConcurrentLinkedQueue<>();
     private final OrderbookCache orderbookCache = new OrderbookCache();
     private final ReferanceDataCache referanceDataCache = new ReferanceDataCache();
-    private final String partitionId;
+    private final PartitionKey partitionKey;
     private final AuditTrail auditTrail;
 
-    public MatchingEngine(String partitionId, AuditTrail auditTrail) {
-        this.partitionId = partitionId;
-        this.auditTrail = auditTrail;
+    public MatchingEngine(PartitionKey partitionKey, KafkaTemplate<String, Object> kafkaTemplate) {
+        this.partitionKey = partitionKey;
+        this.auditTrail = new AuditTrail(kafkaTemplate, partitionKey);
 
-        var messagePollExecutorService = Executors.newSingleThreadExecutor(new ThreadWrapper(partitionId));
+        var messagePollExecutorService = Executors.newSingleThreadExecutor(new ThreadWrapper(partitionKey.description()));
         messagePollExecutorService.execute(this::pollMessages);
-        var logExecutorService = Executors.newScheduledThreadPool(1, new ThreadWrapper(partitionId));
+        var logExecutorService = Executors.newScheduledThreadPool(1, new ThreadWrapper(partitionKey.description()));
         logExecutorService.scheduleAtFixedRate(this::logMessageQueueSize, 0, 30, TimeUnit.SECONDS);
     }
 

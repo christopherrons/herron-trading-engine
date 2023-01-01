@@ -1,7 +1,8 @@
 package com.herron.exchange.tradingengine.server;
 
 import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.tradingengine.server.audittrail.AuditTrail;
+import com.herron.exchange.common.api.common.enums.TopicEnum;
+import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TradingEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(TradingEngine.class);
-    private static final String DEFAULT_PARTITION_ID = "partition-default-1";
-    private final Map<String, MatchingEngine> partitionIdToMatchingEngine = new ConcurrentHashMap<>();
+    private static final PartitionKey DEFAULT_PARTITION_KEY = new PartitionKey(TopicEnum.HERRON_AUDIT_TRAIL, 1);
+    private final Map<PartitionKey, MatchingEngine> partitionKeyToMatchingEngine = new ConcurrentHashMap<>();
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
@@ -22,10 +23,10 @@ public class TradingEngine {
     }
 
     public void queueMessage(Message message) {
-        queueMessage(DEFAULT_PARTITION_ID, message);
+        queueMessage(DEFAULT_PARTITION_KEY, message);
     }
 
-    public void queueMessage(String partitionId, Message message) {
-        partitionIdToMatchingEngine.computeIfAbsent(partitionId, k -> new MatchingEngine(partitionId, new AuditTrail(kafkaTemplate, partitionId))).queueMessage(message);
+    public void queueMessage(PartitionKey partitionKey, Message message) {
+        partitionKeyToMatchingEngine.computeIfAbsent(partitionKey, k -> new MatchingEngine(partitionKey, kafkaTemplate)).queueMessage(message);
     }
 }

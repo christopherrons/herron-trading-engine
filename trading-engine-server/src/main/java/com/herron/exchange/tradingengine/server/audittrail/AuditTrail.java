@@ -3,6 +3,7 @@ package com.herron.exchange.tradingengine.server.audittrail;
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.datastructures.TimeBoundBlockingPriorityQueue;
 import com.herron.exchange.common.api.common.logging.EventLogger;
+import com.herron.exchange.common.api.common.model.PartitionKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -17,12 +18,12 @@ public class AuditTrail {
     private final EventLogger eventLogger;
     private final TimeBoundBlockingPriorityQueue<Message> messageBlockingQueue = new TimeBoundBlockingPriorityQueue<>(10000);
     private final Queue<Message> messageQueue = new ConcurrentLinkedQueue<>();
-    private final String partitionId;
+    private final PartitionKey partitionKey;
 
-    public AuditTrail(KafkaTemplate<String, Object> kafkaTemplate, String partitionId) {
+    public AuditTrail(KafkaTemplate<String, Object> kafkaTemplate, PartitionKey partitionKey) {
         this.kafkaTemplate = kafkaTemplate;
-        this.partitionId = partitionId;
-        this.eventLogger = new EventLogger(partitionId);
+        this.partitionKey = partitionKey;
+        this.eventLogger = new EventLogger(String.valueOf(partitionKey.partitionId()));
     }
 
     public void queueMessage(Message message) {
