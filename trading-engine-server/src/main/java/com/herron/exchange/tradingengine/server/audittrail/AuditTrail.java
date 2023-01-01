@@ -1,6 +1,7 @@
 package com.herron.exchange.tradingengine.server.audittrail;
 
 import com.herron.exchange.common.api.common.api.Message;
+import com.herron.exchange.common.api.common.api.Trade;
 import com.herron.exchange.common.api.common.logging.EventLogger;
 import com.herron.exchange.common.api.common.messages.herron.HerronBroadcastMessage;
 import com.herron.exchange.common.api.common.model.PartitionKey;
@@ -25,9 +26,12 @@ public class AuditTrail {
         this.eventLogger = new EventLogger(String.valueOf(partitionKey.partitionId()));
     }
 
-    public void queueMessage(Message message) {
+    public synchronized void queueMessage(Message message) {
         eventLogger.logEvent();
         var broadCast = new HerronBroadcastMessage(message, message.messageType().getMessageTypeId(), sequenceNumberHandler.getAndIncrement(), Instant.now().toEpochMilli());
         //kafkaTemplate.send(TopicEnum.HERRON_AUDIT_TRAIL.getTopicName(), outGoingMessage.messageType().getMessageTypeId(), message);
+        if (message instanceof Trade trade) {
+            LOGGER.info("{}", trade);
+        }
     }
 }

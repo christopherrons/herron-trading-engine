@@ -26,7 +26,7 @@ public class BitstampAdaptor {
         this.tradingEngine = tradingEngine;
     }
 
-    private final AtomicLong sequenceNumberChecker = new AtomicLong();
+    private final AtomicLong sequenceNumberChecker = new AtomicLong(1);
 
     @KafkaListener(topics = "bitstamp-market-data", groupId = "bitstamp-market-data-1")
     public void listenBitstampMarketData(ConsumerRecord<String, String> consumerRecord) {
@@ -36,8 +36,9 @@ public class BitstampAdaptor {
             return;
         }
 
-        if (broadcastMessage.sequenceNumber() != sequenceNumberChecker.getAndIncrement()) {
-            LOGGER.warn("GAP detected: Expected={}, Incoming={}", sequenceNumberChecker.get(), broadcastMessage.sequenceNumber());
+        long expected = sequenceNumberChecker.getAndIncrement();
+        if (broadcastMessage.sequenceNumber() != expected) {
+            LOGGER.warn("GAP detected: Expected={}, Incoming={}", expected, broadcastMessage.sequenceNumber());
         }
 
         try {
@@ -58,4 +59,5 @@ public class BitstampAdaptor {
             default -> null;
         };
     }
+
 }
