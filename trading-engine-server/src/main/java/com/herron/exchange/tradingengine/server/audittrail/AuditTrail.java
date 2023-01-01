@@ -17,7 +17,7 @@ public class AuditTrail {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final EventLogger eventLogger;
     private final PartitionKey partitionKey;
-    private final AtomicLong sequenceNumberHandler = new AtomicLong();
+    private final AtomicLong sequenceNumberHandler = new AtomicLong(1);
 
     public AuditTrail(KafkaTemplate<String, Object> kafkaTemplate, PartitionKey partitionKey) {
         this.kafkaTemplate = kafkaTemplate;
@@ -27,7 +27,7 @@ public class AuditTrail {
 
     public void queueMessage(Message message) {
         eventLogger.logEvent();
-        var broadCast = new HerronBroadcastMessage(message.serialize(), message.messageType(), sequenceNumberHandler.getAndIncrement(), Instant.now().toEpochMilli());
+        var broadCast = new HerronBroadcastMessage(message, message.messageType().getMessageTypeId(), sequenceNumberHandler.getAndIncrement(), Instant.now().toEpochMilli());
         //kafkaTemplate.send(TopicEnum.HERRON_AUDIT_TRAIL.getTopicName(), outGoingMessage.messageType().getMessageTypeId(), message);
     }
 }

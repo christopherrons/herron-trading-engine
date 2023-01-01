@@ -31,7 +31,7 @@ public class BitstampAdaptor {
     @KafkaListener(topics = "bitstamp-market-data", groupId = "bitstamp-market-data-1")
     public void listenBitstampMarketData(ConsumerRecord<String, String> consumerRecord) {
         BroadcastMessage broadcastMessage = (BroadcastMessage) deserializeMessage(consumerRecord.key(), consumerRecord.value());
-        if (broadcastMessage == null || broadcastMessage.serializedMessage().isEmpty()) {
+        if (broadcastMessage == null || broadcastMessage.serialize().isEmpty()) {
             LOGGER.warn("Unable to map message: {}", consumerRecord);
             return;
         }
