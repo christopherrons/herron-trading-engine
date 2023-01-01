@@ -15,7 +15,6 @@ public class TradingEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(TradingEngine.class);
     private static final PartitionKey DEFAULT_PARTITION_KEY = new PartitionKey(TopicEnum.HERRON_AUDIT_TRAIL, 1);
     private final Map<PartitionKey, MatchingEngine> partitionKeyToMatchingEngine = new ConcurrentHashMap<>();
-
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
     public TradingEngine(KafkaTemplate<String, Object> kafkaTemplate) {
