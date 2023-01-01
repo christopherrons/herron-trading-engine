@@ -19,7 +19,6 @@ public class TradingEngine {
 
     public TradingEngine(KafkaTemplate<String, Object> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
-        var t = new MatchingEngine(DEFAULT_PARTITION_ID, new AuditTrail(kafkaTemplate, DEFAULT_PARTITION_ID));
     }
 
     public void queueMessage(Message message) {
