@@ -1,8 +1,12 @@
 package com.herron.exchange.tradingengine.server.matchingengine.model;
 
-import com.herron.exchange.common.api.common.api.*;
+import com.herron.exchange.common.api.common.api.CancelOrder;
+import com.herron.exchange.common.api.common.api.Message;
+import com.herron.exchange.common.api.common.api.Trade;
+import com.herron.exchange.common.api.common.api.UpdateOrder;
 import com.herron.exchange.common.api.common.enums.*;
 import com.herron.exchange.common.api.common.messages.herron.HerronOrderbookData;
+import com.herron.exchange.common.api.common.messages.herron.HerronStateChange;
 import com.herron.exchange.common.api.common.model.Member;
 import com.herron.exchange.common.api.common.model.Participant;
 import com.herron.exchange.common.api.common.model.User;
@@ -13,8 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorTestUtils.buildOrder;
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorTestUtils.buildOrderCreate;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorTestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
@@ -24,6 +27,7 @@ class ProRataOrderbookTest {
     @BeforeEach
     void init() {
         this.orderbook = new ProRataOrderbook(new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.FIFO, "eur", 0, 0));
+        orderbook.updateState(new HerronStateChange("orderbookId", StateChangeTypeEnum.CONTINUOUS_TRADING, 0));
     }
 
     @Test
@@ -46,7 +50,7 @@ class ProRataOrderbookTest {
         assertEquals(10, orderbook.getOrder("1").currentVolume());
         assertEquals(100, orderbook.getOrder("1").price());
 
-        orderbook.updateOrderbook(buildOrderCreate(0, 99, 9, OrderSideEnum.BID, "1"));
+        orderbook.updateOrderbook(buildOrderUpdate(0, 99, 9, OrderSideEnum.BID, "1"));
         assertEquals(1, orderbook.totalNumberOfPriceLevels());
         assertEquals(1, orderbook.totalNumberOfBidPriceLevels());
         assertEquals(0, orderbook.totalNumberOfAskPriceLevels());
@@ -147,7 +151,6 @@ class ProRataOrderbookTest {
         var order = buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2", new Participant(new Member("member"), new User("user")));
         orderbook.updateOrderbook(order);
         List<Message> matchingMessages = orderbook.runMatchingAlgorithm(order);
-        addMessages(matchingMessages);
         Optional<Trade> trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst();
         assertFalse(trade.isPresent());
     }
@@ -161,7 +164,6 @@ class ProRataOrderbookTest {
 
         var order = buildOrder(3, 101, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FILL, OrderTypeEnum.LIMIT);
         var result = orderbook.runMatchingAlgorithm(order);
-        addMessages(result);
 
         assertEquals(6, result.size());
         assertEquals(5, ((Trade) result.get(2)).volume());
@@ -178,12 +180,11 @@ class ProRataOrderbookTest {
 
         var order = buildOrder(3, 101, 10, OrderSideEnum.BID, "6", OrderExecutionTypeEnum.FILL, OrderTypeEnum.LIMIT);
         var result = orderbook.runMatchingAlgorithm(order);
-        addMessages(result);
 
         assertEquals(9, result.size());
         assertEquals(5, ((Trade) result.get(2)).volume());
-        assertEquals(2, ((Trade) result.get(5)).volume());
-        assertEquals(3, ((Trade) result.get(8)).volume());
+        assertEquals(3, ((Trade) result.get(5)).volume());
+        assertEquals(2, ((Trade) result.get(8)).volume());
     }
 
     @Test
@@ -197,12 +198,11 @@ class ProRataOrderbookTest {
 
         var order = buildOrder(3, 102, 200, OrderSideEnum.BID, "7", OrderExecutionTypeEnum.FILL, OrderTypeEnum.LIMIT);
         var result = orderbook.runMatchingAlgorithm(order);
-        addMessages(result);
 
-        assertEquals(9, result.size());
+        assertEquals(12, result.size());
         assertEquals(50, ((Trade) result.get(2)).volume());
-        assertEquals(20, ((Trade) result.get(5)).volume());
-        assertEquals(30, ((Trade) result.get(8)).volume());
+        assertEquals(30, ((Trade) result.get(5)).volume());
+        assertEquals(20, ((Trade) result.get(8)).volume());
         assertEquals(45, ((Trade) result.get(11)).volume());
     }
 
@@ -235,7 +235,6 @@ class ProRataOrderbookTest {
 
         var order = buildOrder(3, 101, 100, OrderSideEnum.BID, "4", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
         var result = orderbook.runMatchingAlgorithm(order);
-        addMessages(result);
 
         assertEquals(1, result.size());
         assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -251,8 +250,11 @@ class ProRataOrderbookTest {
         var order = buildOrder(3, 102, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
         var result = orderbook.runMatchingAlgorithm(order);
 
-        assertEquals(3, result.size());
+        assertEquals(6, result.size());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(3)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(5)).volume());
     }
 
     @Test
@@ -266,6 +268,7 @@ class ProRataOrderbookTest {
         var result = orderbook.runMatchingAlgorithm(order);
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
     }
 
     @Test
@@ -290,8 +293,11 @@ class ProRataOrderbookTest {
 
         var order = buildOrder(3, 102, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
         var result = orderbook.runMatchingAlgorithm(order);
-        assertEquals(3, result.size());
+        assertEquals(6, result.size());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(3)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(5)).volume());
     }
 
     @Test
@@ -304,7 +310,8 @@ class ProRataOrderbookTest {
         var order = buildOrder(3, 101, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
         var result = orderbook.runMatchingAlgorithm(order);
         assertEquals(3, result.size());
-        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(1)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
     }
 
     @Test
@@ -324,8 +331,13 @@ class ProRataOrderbookTest {
 
         var order = buildOrder(3, Integer.MAX_VALUE, 100, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET);
         var result = orderbook.runMatchingAlgorithm(order);
-        assertEquals(3, result.size());
+        assertEquals(7, result.size());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(3)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(5)).volume());
+        assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(6)).cancelOperationType());
+
     }
 
     @Test
@@ -343,6 +355,7 @@ class ProRataOrderbookTest {
         var result = orderbook.runMatchingAlgorithm(order);
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
     }
 
     @Test
@@ -367,8 +380,11 @@ class ProRataOrderbookTest {
 
         var order = buildOrder(3, Integer.MAX_VALUE, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET);
         var result = orderbook.runMatchingAlgorithm(order);
-        assertEquals(3, result.size());
+        assertEquals(6, result.size());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(3)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(5)).volume());
     }
 
     @Test
@@ -382,6 +398,7 @@ class ProRataOrderbookTest {
         var result = orderbook.runMatchingAlgorithm(order);
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
     }
 
     @Test
@@ -401,8 +418,11 @@ class ProRataOrderbookTest {
 
         var order = buildOrder(3, Integer.MAX_VALUE, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET);
         var result = orderbook.runMatchingAlgorithm(order);
-        assertEquals(3, result.size());
+        assertEquals(6, result.size());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
+        assertEquals(10, ((Trade) result.get(2)).volume());
+        assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(3)).cancelOperationType());
+        assertEquals(10, ((Trade) result.get(5)).volume());
     }
 
     @Test
@@ -416,12 +436,6 @@ class ProRataOrderbookTest {
         var result = orderbook.runMatchingAlgorithm(order);
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(1)).cancelOperationType());
-    }
-
-    private void addMessages(List<Message> messages) {
-        messages.stream()
-                .filter(Order.class::isInstance)
-                .map(Order.class::cast)
-                .forEach(o -> orderbook.updateOrderbook(o));
+        assertEquals(10, ((Trade) result.get(2)).volume());
     }
 }

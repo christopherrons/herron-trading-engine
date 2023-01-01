@@ -4,6 +4,7 @@ import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
+import com.herron.exchange.common.api.common.enums.OrderUpdatedOperationTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.orderbook.model.PriceLevel;
@@ -13,8 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.buildCancelOrder;
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.createMatchingMessages;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.*;
 
 public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
 
@@ -104,6 +104,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
 
             remainingTradeVolume -= minTradeVolumeWeighted;
             result.addAll(createMatchingMessages(order, opposingOrder, minTradeVolumeWeighted));
+            order = buildUpdateOrder(order, minTradeVolumeWeighted, OrderUpdatedOperationTypeEnum.PARTIAL_FILL);
         }
         return result;
     }

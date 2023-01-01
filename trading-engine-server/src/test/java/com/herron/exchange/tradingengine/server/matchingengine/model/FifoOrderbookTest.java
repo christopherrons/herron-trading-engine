@@ -1,6 +1,9 @@
 package com.herron.exchange.tradingengine.server.matchingengine.model;
 
-import com.herron.exchange.common.api.common.api.*;
+import com.herron.exchange.common.api.common.api.CancelOrder;
+import com.herron.exchange.common.api.common.api.Message;
+import com.herron.exchange.common.api.common.api.Trade;
+import com.herron.exchange.common.api.common.api.UpdateOrder;
 import com.herron.exchange.common.api.common.enums.*;
 import com.herron.exchange.common.api.common.messages.herron.HerronOrderbookData;
 import com.herron.exchange.common.api.common.messages.herron.HerronStateChange;
@@ -148,7 +151,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(order);
 
         List<Message> matchingMessages = orderbook.runMatchingAlgorithm(order);
-        addMessages(matchingMessages);
+
         Trade trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
         assertEquals(5, orderbook.totalOrderVolume());
         assertNotEquals(0, trade.tradeId());
@@ -157,7 +160,7 @@ class FifoOrderbookTest {
         order = buildOrderCreate(3, 100, 6, OrderSideEnum.BID, "3");
         orderbook.updateOrderbook(order);
         matchingMessages = orderbook.runMatchingAlgorithm(order);
-        addMessages(matchingMessages);
+
         trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
         assertEquals(1, orderbook.totalOrderVolume());
         assertNotEquals("0", trade.tradeId());
@@ -170,7 +173,7 @@ class FifoOrderbookTest {
         var order = buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2", new Participant(new Member("member"), new User("user")));
         orderbook.updateOrderbook(order);
         List<Message> matchingMessages = orderbook.runMatchingAlgorithm(order);
-        addMessages(matchingMessages);
+
         Optional<Trade> trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst();
         assertFalse(trade.isPresent());
     }
@@ -204,7 +207,6 @@ class FifoOrderbookTest {
 
         var order = buildOrder(3, 101, 100, OrderSideEnum.BID, "4", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
         var result = orderbook.runMatchingAlgorithm(order);
-        addMessages(result);
 
         assertEquals(1, result.size());
         assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -413,12 +415,5 @@ class FifoOrderbookTest {
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(1)).cancelOperationType());
         assertEquals(10, ((Trade) result.get(2)).volume());
-    }
-
-    private void addMessages(List<Message> messages) {
-        messages.stream()
-                .filter(Order.class::isInstance)
-                .map(Order.class::cast)
-                .forEach(o -> orderbook.updateOrderbook(o));
     }
 }
