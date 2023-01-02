@@ -1,11 +1,8 @@
 package com.herron.exchange.tradingengine.server.adaptor;
 
-import com.herron.exchange.common.api.common.api.*;
+import com.herron.exchange.common.api.common.api.BroadcastMessage;
+import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.enums.TopicEnum;
-import com.herron.exchange.common.api.common.messages.HerronAddOrder;
-import com.herron.exchange.common.api.common.messages.HerronOrderbookData;
-import com.herron.exchange.common.api.common.messages.HerronStateChange;
-import com.herron.exchange.common.api.common.messages.HerronStockInstrument;
 import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -58,21 +55,10 @@ public class BitstampAdaptor {
 
         try {
             Message message = broadcastMessage.message();
-            message = mapToHerronMessage(message);
             tradingEngine.queueMessage(getPartitionKey(consumerRecord.partition()), message);
         } catch (Exception e) {
             LOGGER.warn("Unhandled exception for record: {}, decoded-message: {}, {}", consumerRecord, broadcastMessage, e);
         }
-    }
-
-    private Message mapToHerronMessage(Message message) {
-        return switch (message.messageType()) {
-            case BITSTAMP_STOCK_INSTRUMENT -> new HerronStockInstrument((Instrument) message);
-            case BITSTAMP_ORDERBOOK_DATA -> new HerronOrderbookData((OrderbookData) message);
-            case BITSTAMP_STATE_CHANGE -> new HerronStateChange((StateChange) message);
-            case BITSTAMP_ADD_ORDER -> new HerronAddOrder((AddOrder) message);
-            default -> null;
-        };
     }
 
     private long getSequenceNumber(int partition) {
