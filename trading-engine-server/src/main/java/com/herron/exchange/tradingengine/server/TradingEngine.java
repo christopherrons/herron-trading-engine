@@ -14,7 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TradingEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(TradingEngine.class);
-    private final EventLogger eventLogger = new EventLogger();
     private static final PartitionKey DEFAULT_PARTITION_KEY = new PartitionKey(TopicEnum.HERRON_AUDIT_TRAIL, 1);
     private final Map<PartitionKey, MatchingEngine> partitionKeyToMatchingEngine = new ConcurrentHashMap<>();
     private final KafkaTemplate<String, Object> kafkaTemplate;
@@ -28,7 +27,6 @@ public class TradingEngine {
     }
 
     public void queueMessage(PartitionKey partitionKey, Message message) {
-        eventLogger.logEvent();
         partitionKeyToMatchingEngine.computeIfAbsent(partitionKey, k -> new MatchingEngine(partitionKey, kafkaTemplate)).queueMessage(message);
     }
 }
