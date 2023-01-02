@@ -3,6 +3,7 @@ package com.herron.exchange.tradingengine.server.adaptor;
 import com.herron.exchange.common.api.common.api.BroadcastMessage;
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.enums.TopicEnum;
+import com.herron.exchange.common.api.common.logging.EventLogger;
 import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

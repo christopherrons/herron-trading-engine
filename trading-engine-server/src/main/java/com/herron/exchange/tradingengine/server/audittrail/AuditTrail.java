@@ -16,14 +16,13 @@ public class AuditTrail {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuditTrail.class);
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final EventLogger eventLogger;
+    private final EventLogger eventLogger = new EventLogger(5000);
     private final PartitionKey partitionKey;
     private final AtomicLong sequenceNumberHandler = new AtomicLong(1);
 
     public AuditTrail(KafkaTemplate<String, Object> kafkaTemplate, PartitionKey partitionKey) {
         this.kafkaTemplate = kafkaTemplate;
         this.partitionKey = partitionKey;
-        this.eventLogger = new EventLogger();
     }
 
     public synchronized void queueMessage(Message message) {
