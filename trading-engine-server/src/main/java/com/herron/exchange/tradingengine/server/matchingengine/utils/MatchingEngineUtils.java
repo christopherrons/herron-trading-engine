@@ -21,9 +21,9 @@ public class MatchingEngineUtils {
                                    Order askOrder,
                                    double tradeVolume) {
         boolean isBidSideAggressor;
-        if (bidOrder.orderType().equals(OrderTypeEnum.MARKET)) {
+        if (bidOrder.orderType() == OrderTypeEnum.MARKET) {
             isBidSideAggressor = true;
-        } else if (askOrder.orderType().equals(OrderTypeEnum.MARKET)) {
+        } else if (askOrder.orderType() == OrderTypeEnum.MARKET) {
             isBidSideAggressor = false;
         } else {
             isBidSideAggressor = bidOrder.timeStampInMs() >= askOrder.timeStampInMs();
@@ -64,7 +64,7 @@ public class MatchingEngineUtils {
                 order.orderId(),
                 order.orderSide(),
                 order.initialVolume(),
-                orderCancelOperationTypeEnum.equals(OrderCancelOperationTypeEnum.FILLED) ? 0 : order.currentVolume(),
+                orderCancelOperationTypeEnum == OrderCancelOperationTypeEnum.FILLED ? 0 : order.currentVolume(),
                 order.monetaryAmount(),
                 order.timeStampInMs(),
                 order.instrumentId(),
@@ -103,7 +103,7 @@ public class MatchingEngineUtils {
         }
 
         final Trade trade;
-        if (thisOrder.orderSide().equals(OrderSideEnum.BID)) {
+        if (thisOrder.orderSide() == OrderSideEnum.BID) {
             trade = buildTrade(thisOrder, thatOrder, tradeVolume);
         } else {
             trade = buildTrade(thatOrder, thisOrder, tradeVolume);

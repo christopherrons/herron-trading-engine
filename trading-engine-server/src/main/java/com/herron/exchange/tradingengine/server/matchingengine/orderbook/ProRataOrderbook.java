@@ -176,7 +176,7 @@ public class ProRataOrderbook implements Orderbook {
 
     @Override
     public List<Message> runMatchingAlgorithm(Order matchingOrder) {
-        if (matchingOrder.currentVolume() <= 0 || !getState().equals(StateChangeTypeEnum.CONTINUOUS_TRADING)) {
+        if (matchingOrder.currentVolume() <= 0 || getState() != StateChangeTypeEnum.CONTINUOUS_TRADING) {
             return Collections.emptyList();
         }
 
@@ -193,7 +193,7 @@ public class ProRataOrderbook implements Orderbook {
                     }
                 }
             }
-        } while (!matchingMessages.isEmpty() && !matchingOrder.orderOperation().equals(OrderOperationEnum.DELETE));
+        } while (!matchingMessages.isEmpty() && matchingOrder.orderOperation() != OrderOperationEnum.DELETE);
 
         return result;
     }

@@ -86,7 +86,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
     }
 
     private boolean isMatch(Order order, Order opposingBestOrder) {
-        if (order.orderType().equals(OrderTypeEnum.MARKET)) {
+        if (order.orderType() == OrderTypeEnum.MARKET) {
             return true;
         }
         return switch (order.orderSide()) {

@@ -15,8 +15,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.Executors.newScheduledThreadPool;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 public class MatchingEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(MatchingEngine.class);
@@ -30,10 +32,10 @@ public class MatchingEngine {
         this.partitionKey = partitionKey;
         this.auditTrail = new AuditTrail(kafkaTemplate, partitionKey);
 
-        var messagePollExecutorService = Executors.newSingleThreadExecutor(new ThreadWrapper(partitionKey.description()));
+        var messagePollExecutorService = newSingleThreadExecutor(new ThreadWrapper(partitionKey.description()));
         messagePollExecutorService.execute(this::pollMessages);
-        var logExecutorService = Executors.newScheduledThreadPool(1, new ThreadWrapper(partitionKey.description()));
-        logExecutorService.scheduleAtFixedRate(this::logMessageQueueSize, 0, 30, TimeUnit.SECONDS);
+        var logExecutorService = newScheduledThreadPool(1, new ThreadWrapper(partitionKey.description()));
+        logExecutorService.scheduleAtFixedRate(this::logMessageQueueSize, 0, 60, TimeUnit.SECONDS);
     }
 
     public void queueMessage(Message message) {
