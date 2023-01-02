@@ -2,6 +2,7 @@ package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.*;
 import com.herron.exchange.common.api.common.model.PartitionKey;
+import com.herron.exchange.common.api.common.wrappers.ThreadWrapper;
 import com.herron.exchange.tradingengine.server.audittrail.AuditTrail;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.OrderbookCache;
