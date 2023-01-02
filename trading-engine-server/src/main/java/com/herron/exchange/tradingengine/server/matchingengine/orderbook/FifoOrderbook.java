@@ -17,7 +17,6 @@ import java.util.Collections;
 import java.util.List;
 
 public class FifoOrderbook implements Orderbook {
-
     private StateChangeTypeEnum stateChangeTypeEnum = StateChangeTypeEnum.INVALID_STATE_CHANGE;
     private final OrderbookData orderbookData;
     private final ActiveOrders activeOrders;

@@ -41,6 +41,10 @@ versionFile="$COMMON_VERSION_FILE"
 touch "$versionFile"
 echo "$version" > "$versionFile"
 
+# Start the application with specified version
+setNohupFileName
+echo "Starting Application: $version"
+
 KAFKA_VERSION="kafka_2.13-3.3.1"
 KAFKA_CLUSTER_ID="$($KAFKA_VERSION/bin/kafka-storage.sh random-uuid)"
 $KAFKA_VERSION/bin/kafka-storage.sh format -t "$KAFKA_CLUSTER_ID" -c $KAFKA_VERSION/config/kraft/server.properties
