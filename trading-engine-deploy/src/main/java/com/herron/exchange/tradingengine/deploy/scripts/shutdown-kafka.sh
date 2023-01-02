@@ -18,6 +18,10 @@ function getPid() {
 function killProcess() {
   pid=$1
   echo "Attempting to exit gracefully: kill -SIGTERM $pid"
+  if [ "x$pid" == "x" ]; then
+    rm "$versionFile"
+    exit
+  fi
   kill -SIGTERM "$pid"
 
   isProcessRunningValue=$(isProcessRunning "$pid")
