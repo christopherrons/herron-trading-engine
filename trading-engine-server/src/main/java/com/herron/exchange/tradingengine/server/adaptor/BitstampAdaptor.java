@@ -2,10 +2,10 @@ package com.herron.exchange.tradingengine.server.adaptor;
 
 import com.herron.exchange.common.api.common.api.*;
 import com.herron.exchange.common.api.common.enums.TopicEnum;
-import com.herron.exchange.common.api.common.messages.herron.HerronAddOrder;
-import com.herron.exchange.common.api.common.messages.herron.HerronOrderbookData;
-import com.herron.exchange.common.api.common.messages.herron.HerronStateChange;
-import com.herron.exchange.common.api.common.messages.herron.HerronStockInstrument;
+import com.herron.exchange.common.api.common.messages.HerronAddOrder;
+import com.herron.exchange.common.api.common.messages.HerronOrderbookData;
+import com.herron.exchange.common.api.common.messages.HerronStateChange;
+import com.herron.exchange.common.api.common.messages.HerronStockInstrument;
 import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

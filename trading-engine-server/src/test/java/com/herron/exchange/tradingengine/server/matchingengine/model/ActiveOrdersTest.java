@@ -6,7 +6,7 @@ import com.herron.exchange.tradingengine.server.matchingengine.orderbook.ActiveO
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorTestUtils.buildOrderCreate;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.MessageCreatorTestUtils.buildOrderCreate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ActiveOrdersTest {

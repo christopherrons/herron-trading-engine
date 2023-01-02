@@ -3,8 +3,8 @@ package com.herron.exchange.tradingengine.server.matchingengine.utils;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.api.Trade;
 import com.herron.exchange.common.api.common.enums.*;
-import com.herron.exchange.common.api.common.messages.herron.HerronAddOrder;
-import com.herron.exchange.common.api.common.messages.herron.HerronTrade;
+import com.herron.exchange.common.api.common.messages.HerronAddOrder;
+import com.herron.exchange.common.api.common.messages.HerronTrade;
 import com.herron.exchange.common.api.common.model.Member;
 import com.herron.exchange.common.api.common.model.MonetaryAmount;
 import com.herron.exchange.common.api.common.model.Participant;
@@ -12,7 +12,7 @@ import com.herron.exchange.common.api.common.model.User;
 
 import java.time.Instant;
 
-public class EventCreatorTestUtils {
+public class MessageCreatorTestUtils {
     public static Order buildOrderCreate(long timeStampInMs,
                                          double price,
                                          double volume,

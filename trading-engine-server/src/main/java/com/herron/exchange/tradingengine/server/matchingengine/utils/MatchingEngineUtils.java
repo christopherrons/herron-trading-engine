@@ -4,9 +4,9 @@ import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Order;
 import com.herron.exchange.common.api.common.api.Trade;
 import com.herron.exchange.common.api.common.enums.*;
-import com.herron.exchange.common.api.common.messages.herron.HerronCancelOrder;
-import com.herron.exchange.common.api.common.messages.herron.HerronTrade;
-import com.herron.exchange.common.api.common.messages.herron.HerronUpdateOrder;
+import com.herron.exchange.common.api.common.messages.HerronCancelOrder;
+import com.herron.exchange.common.api.common.messages.HerronTrade;
+import com.herron.exchange.common.api.common.messages.HerronUpdateOrder;
 import com.herron.exchange.common.api.common.model.Participant;
 
 import java.time.Instant;

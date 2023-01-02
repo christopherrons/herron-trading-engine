@@ -5,8 +5,8 @@ import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.Trade;
 import com.herron.exchange.common.api.common.api.UpdateOrder;
 import com.herron.exchange.common.api.common.enums.*;
-import com.herron.exchange.common.api.common.messages.herron.HerronOrderbookData;
-import com.herron.exchange.common.api.common.messages.herron.HerronStateChange;
+import com.herron.exchange.common.api.common.messages.HerronOrderbookData;
+import com.herron.exchange.common.api.common.messages.HerronStateChange;
 import com.herron.exchange.common.api.common.model.Member;
 import com.herron.exchange.common.api.common.model.Participant;
 import com.herron.exchange.common.api.common.model.User;
@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Optional;
 
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.EventCreatorTestUtils.*;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.MessageCreatorTestUtils.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
