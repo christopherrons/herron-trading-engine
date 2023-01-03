@@ -1,6 +1,6 @@
 package com.herron.exchange.tradingengine.server.config;
 
-import com.herron.exchange.common.api.common.enums.TopicEnum;
+import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -17,7 +17,7 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic auditTrailTopic() {
         return TopicBuilder
-                .name(TopicEnum.HERRON_AUDIT_TRAIL.getTopicName())
+                .name(KafkaTopicEnum.HERRON_AUDIT_TRAIL.getTopicName())
                 .partitions(nrOfPartitions)
                 .build();
     }

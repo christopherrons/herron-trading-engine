@@ -1,7 +1,7 @@
 package com.herron.exchange.tradingengine.server;
 
 import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.enums.TopicEnum;
+import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
 import org.slf4j.Logger;
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class TradingEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(TradingEngine.class);
-    private static final PartitionKey DEFAULT_PARTITION_KEY = new PartitionKey(TopicEnum.HERRON_AUDIT_TRAIL, 1);
+    private static final PartitionKey DEFAULT_PARTITION_KEY = new PartitionKey(KafkaTopicEnum.HERRON_AUDIT_TRAIL, 1);
     private final Map<PartitionKey, MatchingEngine> partitionKeyToMatchingEngine = new ConcurrentHashMap<>();
     private final KafkaTemplate<String, Object> kafkaTemplate;
 

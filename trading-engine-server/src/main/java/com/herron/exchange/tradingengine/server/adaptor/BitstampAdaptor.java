@@ -2,7 +2,7 @@ package com.herron.exchange.tradingengine.server.adaptor;
 
 import com.herron.exchange.common.api.common.api.BroadcastMessage;
 import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.enums.TopicEnum;
+import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -20,8 +20,8 @@ import static com.herron.exchange.common.api.common.enums.MessageTypesEnum.deser
 
 public class BitstampAdaptor {
     private static final Logger LOGGER = LoggerFactory.getLogger(BitstampAdaptor.class);
-    private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(TopicEnum.HERRON_AUDIT_TRAIL, 0);
-    private static final PartitionKey PARTITION_ONE_KEY = new PartitionKey(TopicEnum.HERRON_AUDIT_TRAIL, 1);
+    private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.HERRON_AUDIT_TRAIL, 0);
+    private static final PartitionKey PARTITION_ONE_KEY = new PartitionKey(KafkaTopicEnum.HERRON_AUDIT_TRAIL, 1);
     private final TradingEngine tradingEngine;
     private final Map<PartitionKey, AtomicLong> partitionToSequenceNumberHandler = new ConcurrentHashMap<>();
 
