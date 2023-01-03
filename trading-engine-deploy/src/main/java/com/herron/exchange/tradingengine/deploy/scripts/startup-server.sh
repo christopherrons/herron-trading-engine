@@ -42,4 +42,4 @@ echo "$version" >"$versionFile"
 # Start the application with specified version
 setNohupFileName
 echo "Starting Application: $version"
-nohup  "$JAVA_HOME"/bin/java-jar "$JVM_OPTS" "$version" &>nohup.out &
+nohup  "$JAVA_HOME"/bin/java -jar "$JVM_OPTS" "$version" &>nohup.out &
