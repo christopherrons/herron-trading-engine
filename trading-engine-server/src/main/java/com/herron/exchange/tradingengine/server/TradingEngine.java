@@ -2,7 +2,6 @@ package com.herron.exchange.tradingengine.server;
 
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.enums.TopicEnum;
-import com.herron.exchange.common.api.common.logging.EventLogger;
 import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
 import org.slf4j.Logger;
