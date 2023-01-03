@@ -1,7 +1,6 @@
 package com.herron.exchange.tradingengine.server.audittrail;
 
 import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.enums.TopicEnum;
 import com.herron.exchange.common.api.common.logging.EventLogger;
 import com.herron.exchange.common.api.common.messages.HerronBroadcastMessage;
 import com.herron.exchange.common.api.common.model.PartitionKey;
