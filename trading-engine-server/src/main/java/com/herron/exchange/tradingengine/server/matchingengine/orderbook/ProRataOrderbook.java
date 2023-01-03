@@ -33,7 +33,7 @@ public class ProRataOrderbook implements Orderbook {
         orders.forEach(this::updateOrderbook);
     }
 
-    public void updateOrderbook(Order order) {
+    public synchronized void updateOrderbook(Order order) {
         if (order.isActiveOrder()) {
             switch (order.orderOperation()) {
                 case CREATE -> addOrder(order);

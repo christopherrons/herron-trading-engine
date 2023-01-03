@@ -28,7 +28,7 @@ public class FifoOrderbook implements Orderbook {
         this.matchingAlgorithm = new FifoMatchingAlgorithm(activeOrders);
     }
 
-    public void updateOrderbook(Order order) {
+    public synchronized void updateOrderbook(Order order) {
         if (order.isActiveOrder()) {
             switch (order.orderOperation()) {
                 case CREATE -> addOrder(order);
