@@ -11,14 +11,14 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 public class KafkaTopicConfig {
 
-    @Value("${spring.kafka.bootstrap-servers}")
-    public String bootstrapServers;
+    @Value("${kafka-topic-audit-trail.nr-of-partitions}")
+    public int nrOfPartitions;
 
     @Bean
     public NewTopic bitstampAuditTrailTopic() {
         return TopicBuilder
                 .name(TopicEnum.HERRON_AUDIT_TRAIL.getTopicName())
-                .partitions(1)
+                .partitions(nrOfPartitions)
                 .build();
     }
 }
