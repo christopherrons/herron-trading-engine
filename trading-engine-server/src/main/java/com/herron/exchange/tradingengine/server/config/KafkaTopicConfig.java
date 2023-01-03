@@ -11,7 +11,7 @@ import org.springframework.kafka.config.TopicBuilder;
 @Configuration
 public class KafkaTopicConfig {
 
-    @Value("${kafka-topic-audit-trail.nr-of-partitions}")
+    @Value("${kafka.topic.audit-trail.nr-of-partitions}")
     public int nrOfPartitions;
 
     @Bean
