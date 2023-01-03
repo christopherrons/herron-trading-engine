@@ -15,7 +15,7 @@ public class KafkaTopicConfig {
     public int nrOfPartitions;
 
     @Bean
-    public NewTopic bitstampAuditTrailTopic() {
+    public NewTopic auditTrailTopic() {
         return TopicBuilder
                 .name(TopicEnum.HERRON_AUDIT_TRAIL.getTopicName())
                 .partitions(nrOfPartitions)
