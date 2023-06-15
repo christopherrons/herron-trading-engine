@@ -1,31 +1,34 @@
 package com.herron.exchange.tradingengine.server.matchingengine.orderbook;
 
-import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.api.Order;
-import com.herron.exchange.common.api.common.api.OrderbookData;
-import com.herron.exchange.common.api.common.api.StateChange;
+import com.herron.exchange.common.api.common.api.*;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
+import com.herron.exchange.common.api.common.messages.HerronTradeExecution;
+import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
 import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.FifoMatchingAlgorithm;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-public class FifoOrderbook implements Orderbook {
+public class OrderbookImpl implements Orderbook {
+    private final Logger logger = LoggerFactory.getLogger(MatchingEngine.class);
+
     private StateChangeTypeEnum stateChangeTypeEnum = StateChangeTypeEnum.INVALID_STATE_CHANGE;
     private final OrderbookData orderbookData;
     private final ActiveOrders activeOrders;
     private final MatchingAlgorithm matchingAlgorithm;
 
-    public FifoOrderbook(OrderbookData orderbookData) {
+    public OrderbookImpl(OrderbookData orderbookData, ActiveOrders activeOrders, MatchingAlgorithm matchingAlgorithm) {
         this.orderbookData = orderbookData;
-        this.activeOrders = new ActiveOrders(new FifoOrderBookComparator());
-        this.matchingAlgorithm = new FifoMatchingAlgorithm(activeOrders);
+        this.activeOrders = activeOrders;
+        this.matchingAlgorithm = matchingAlgorithm;
     }
 
     public synchronized void updateOrderbook(Order order) {
@@ -34,6 +37,7 @@ public class FifoOrderbook implements Orderbook {
                 case CREATE -> addOrder(order);
                 case UPDATE -> updateOrder(order);
                 case DELETE -> removeOrder(order);
+
             }
         }
     }
@@ -170,17 +174,17 @@ public class FifoOrderbook implements Orderbook {
     }
 
     @Override
-    public List<Message> runMatchingAlgorithm(Order matchingOrder) {
+    public TradeExecution runMatchingAlgorithm(Order matchingOrder) {
         if (matchingOrder.currentVolume() <= 0 || getState() != StateChangeTypeEnum.CONTINUOUS_TRADING) {
-            return Collections.emptyList();
+            return null;
         }
 
-        final List<Message> result = new ArrayList<>();
+        final List<Message> messages = new ArrayList<>();
         List<Message> matchingMessages;
         do {
-            matchingMessages = matchingOrder.isActiveOrder() ? matchingAlgorithm.matchActiveOrder(matchingOrder) : matchNonActiveOrders(matchingOrder);
+            matchingMessages = matchingAlgorithm.matchOrder(matchingOrder);
             for (var message : matchingMessages) {
-                result.add(message);
+                messages.add(message);
                 if (message instanceof Order order) {
                     updateOrderbook(order);
                     if (order.orderId().equals(matchingOrder.orderId())) {
@@ -190,14 +194,6 @@ public class FifoOrderbook implements Orderbook {
             }
         } while (!matchingMessages.isEmpty() && matchingOrder.orderOperation() != OrderOperationEnum.DELETE);
 
-        return result;
-    }
-
-    private List<Message> matchNonActiveOrders(Order nonActiveOrder) {
-        return switch (nonActiveOrder.orderExecutionType()) {
-            case FOK -> matchingAlgorithm.matchFillOrKill(nonActiveOrder);
-            case FAK -> matchingAlgorithm.matchFillAndKill(nonActiveOrder);
-            default -> matchingAlgorithm.matchMarketOrder(nonActiveOrder);
-        };
+        return new HerronTradeExecution(messages, Instant.now().toEpochMilli());
     }
 }

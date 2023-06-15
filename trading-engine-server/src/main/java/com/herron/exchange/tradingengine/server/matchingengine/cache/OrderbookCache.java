@@ -1,7 +1,6 @@
 package com.herron.exchange.tradingengine.server.matchingengine.cache;
 
 import com.herron.exchange.common.api.common.api.OrderbookData;
-import com.herron.exchange.common.api.common.api.StateChange;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.factory.OrderbookFactory;
 import org.slf4j.Logger;
@@ -20,21 +19,6 @@ public class OrderbookCache {
     }
 
     public Orderbook getOrderbook(String orderbookId) {
-        if (orderbookIdToOrderBook.containsKey(orderbookId)) {
-            return orderbookIdToOrderBook.get(orderbookId);
-        }
-
-        LOGGER.warn("Cannot find orderbook for orderbookid: {}", orderbookId);
-        return null;
-
+        return orderbookIdToOrderBook.get(orderbookId);
     }
-
-    public void updateState(StateChange stateChange) {
-        if (orderbookIdToOrderBook.containsKey(stateChange.orderbookId())) {
-            orderbookIdToOrderBook.get(stateChange.orderbookId()).updateState(stateChange);
-        } else {
-            LOGGER.warn("Cannot update state due to missing orderbook: {}", stateChange);
-        }
-    }
-
 }

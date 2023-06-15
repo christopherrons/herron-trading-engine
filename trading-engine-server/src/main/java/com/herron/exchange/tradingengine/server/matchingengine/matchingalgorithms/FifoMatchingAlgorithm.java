@@ -23,7 +23,19 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         this.activeOrders = activeOrders;
     }
 
-    public List<Message> matchActiveOrder(Order order) {
+    public List<Message> matchOrder(Order order) {
+        return order.isActiveOrder() ? matchActiveOrder(order) : matchNonActiveOrders(order);
+    }
+
+    private List<Message> matchNonActiveOrders(Order nonActiveOrder) {
+        return switch (nonActiveOrder.orderExecutionType()) {
+            case FOK -> matchFillOrKill(nonActiveOrder);
+            case FAK -> matchFillAndKill(nonActiveOrder);
+            default -> matchMarketOrder(nonActiveOrder);
+        };
+    }
+
+    private List<Message> matchActiveOrder(Order order) {
         Optional<Order> opposingBestOptional = getOpposingBestOrder(order);
         if (opposingBestOptional.isEmpty()) {
             return Collections.emptyList();

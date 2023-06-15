@@ -205,7 +205,7 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         double availableVolume = 0;
         for (var level : bidPriceToPriceLevel.values()) {
             if (order.orderType() == OrderTypeEnum.MARKET || order.price() <= level.getPrice()) {
-                availableVolume = level.volumeAtPriceLevel();
+                availableVolume += level.volumeAtPriceLevel();
             } else {
                 return false;
             }

@@ -24,7 +24,10 @@ public class AuditTrail {
         this.partitionKey = partitionKey;
     }
 
-    public synchronized void queueMessage(Message message) {
+    public synchronized void broadcastMessage(Message message) {
+        if (message == null) {
+            return;
+        }
         eventLogger.logEvent();
         var broadCast = new HerronBroadcastMessage(message, message.messageType().getMessageTypeId(), sequenceNumberHandler.getAndIncrement(), Instant.now().toEpochMilli());
         kafkaTemplate.send(partitionKey.topicEnum().getTopicName(), partitionKey.partitionId(), broadCast.messageType().getMessageTypeId(), broadCast);

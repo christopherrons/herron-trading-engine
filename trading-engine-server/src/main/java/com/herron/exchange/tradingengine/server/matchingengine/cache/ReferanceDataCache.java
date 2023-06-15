@@ -2,7 +2,6 @@ package com.herron.exchange.tradingengine.server.matchingengine.cache;
 
 import com.herron.exchange.common.api.common.api.Instrument;
 import com.herron.exchange.common.api.common.api.OrderbookData;
-import com.herron.exchange.common.api.common.api.StateChange;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

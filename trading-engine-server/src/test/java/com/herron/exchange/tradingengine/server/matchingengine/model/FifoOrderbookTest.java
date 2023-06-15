@@ -10,7 +10,8 @@ import com.herron.exchange.common.api.common.messages.HerronStateChange;
 import com.herron.exchange.common.api.common.model.Member;
 import com.herron.exchange.common.api.common.model.Participant;
 import com.herron.exchange.common.api.common.model.User;
-import com.herron.exchange.tradingengine.server.matchingengine.orderbook.FifoOrderbook;
+import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
+import com.herron.exchange.tradingengine.server.matchingengine.factory.OrderbookFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -21,11 +22,12 @@ import static com.herron.exchange.tradingengine.server.matchingengine.utils.Mess
 import static org.junit.jupiter.api.Assertions.*;
 
 class FifoOrderbookTest {
-    private FifoOrderbook orderbook;
+    private Orderbook orderbook;
 
     @BeforeEach
     void init() {
-        this.orderbook = new FifoOrderbook(new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.FIFO, "eur", 0, 0));
+        var orderbookData = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.FIFO, "eur", 0, 0);
+        this.orderbook = OrderbookFactory.createOrderbook(orderbookData);
         orderbook.updateState(new HerronStateChange("orderbookId", StateChangeTypeEnum.CONTINUOUS_TRADING, 0));
     }
 
@@ -150,7 +152,7 @@ class FifoOrderbookTest {
         var order = buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2");
         orderbook.updateOrderbook(order);
 
-        List<Message> matchingMessages = orderbook.runMatchingAlgorithm(order);
+        List<Message> matchingMessages = orderbook.runMatchingAlgorithm(order).messages();
 
         Trade trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
         assertEquals(5, orderbook.totalOrderVolume());
@@ -159,7 +161,7 @@ class FifoOrderbookTest {
 
         order = buildOrderCreate(3, 100, 6, OrderSideEnum.BID, "3");
         orderbook.updateOrderbook(order);
-        matchingMessages = orderbook.runMatchingAlgorithm(order);
+        matchingMessages = orderbook.runMatchingAlgorithm(order).messages();
 
         trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
         assertEquals(1, orderbook.totalOrderVolume());
@@ -172,7 +174,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(0, 100, 10, OrderSideEnum.BID, "1", new Participant(new Member("member"), new User("user"))));
         var order = buildOrderCreate(2, 100, 15, OrderSideEnum.ASK, "2", new Participant(new Member("member"), new User("user")));
         orderbook.updateOrderbook(order);
-        List<Message> matchingMessages = orderbook.runMatchingAlgorithm(order);
+        List<Message> matchingMessages = orderbook.runMatchingAlgorithm(order).messages();
 
         Optional<Trade> trade = matchingMessages.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst();
         assertFalse(trade.isPresent());
@@ -206,7 +208,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 101, 10, OrderSideEnum.ASK, "3"));
 
         var order = buildOrder(3, 101, 100, OrderSideEnum.BID, "4", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
 
         assertEquals(1, result.size());
         assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -220,7 +222,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, 102, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
 
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
@@ -239,7 +241,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, 102, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
     }
@@ -252,7 +254,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, 100.5, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(1, result.size());
         assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
     }
@@ -265,7 +267,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, 102, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
@@ -283,7 +285,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, 101, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
     }
@@ -291,7 +293,7 @@ class FifoOrderbookTest {
     @Test
     void test_matching_algorithm_market_fill_killed() {
         var order = buildOrder(3, 100.5, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(1, result.size());
         assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
     }
@@ -304,7 +306,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, Integer.MAX_VALUE, 100, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(7, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
@@ -327,7 +329,7 @@ class FifoOrderbookTest {
         assertEquals(2, orderbook.totalNumberOfAskOrders());
 
         var order = buildOrder(3, Integer.MAX_VALUE, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FILL, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
     }
@@ -340,7 +342,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, Integer.MAX_VALUE, 100, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(1, result.size());
         assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
     }
@@ -353,7 +355,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, Integer.MAX_VALUE, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
@@ -371,7 +373,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, Integer.MAX_VALUE, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FOK, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
     }
@@ -379,7 +381,7 @@ class FifoOrderbookTest {
     @Test
     void test_matching_algorithm_market_fill_and_kill_killed() {
         var order = buildOrder(3, Integer.MAX_VALUE, 100, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(1, result.size());
         assertEquals(OrderCancelOperationTypeEnum.KILLED, ((CancelOrder) result.get(0)).cancelOperationType());
     }
@@ -392,7 +394,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, Integer.MAX_VALUE, 20, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
         assertEquals(OrderUpdatedOperationTypeEnum.PARTIAL_FILL, ((UpdateOrder) result.get(1)).updateOperationType());
@@ -410,7 +412,7 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderCreate(2, 102, 10, OrderSideEnum.ASK, "4"));
 
         var order = buildOrder(3, Integer.MAX_VALUE, 10, OrderSideEnum.BID, "5", OrderExecutionTypeEnum.FAK, OrderTypeEnum.MARKET);
-        var result = orderbook.runMatchingAlgorithm(order);
+        var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(1)).cancelOperationType());

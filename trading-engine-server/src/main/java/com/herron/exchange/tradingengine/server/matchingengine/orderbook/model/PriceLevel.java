@@ -24,7 +24,7 @@ public class PriceLevel extends TreeSet<Order> {
     }
 
     public double volumeAtPriceLevel() {
-        return stream().mapToDouble(Order::currentVolume).sum();
+        return stream().mapToDouble(Order::currentVolume).sum(); //TODO: Fix that this is updated at each insert / cencel
     }
 
     public double volumeAtPriceLevel(Predicate<Order> filter) {
