@@ -1,12 +1,8 @@
 package com.herron.exchange.tradingengine.server.matchingengine.model;
 
-import com.herron.exchange.common.api.common.api.CancelOrder;
-import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.api.Trade;
-import com.herron.exchange.common.api.common.api.UpdateOrder;
+import com.herron.exchange.common.api.common.api.*;
 import com.herron.exchange.common.api.common.enums.*;
 import com.herron.exchange.common.api.common.messages.HerronOrderbookData;
-import com.herron.exchange.common.api.common.messages.HerronStateChange;
 import com.herron.exchange.common.api.common.model.Member;
 import com.herron.exchange.common.api.common.model.Participant;
 import com.herron.exchange.common.api.common.model.User;
@@ -26,8 +22,9 @@ class FifoOrderbookTest {
 
     @BeforeEach
     void init() {
-        var orderbookData = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.FIFO, "eur", 0, 0);
+        var orderbookData = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.FIFO, "eur", 0, 0, AuctionAlgorithmEnum.DUTCH);
         this.orderbook = OrderbookFactory.createOrderbook(orderbookData);
+        orderbook.updateState(StateChangeTypeEnum.PRE_TRADE);
         orderbook.updateState(StateChangeTypeEnum.CONTINUOUS_TRADING);
     }
 
@@ -417,5 +414,39 @@ class FifoOrderbookTest {
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(0)).cancelOperationType());
         assertEquals(OrderCancelOperationTypeEnum.FILLED, ((CancelOrder) result.get(1)).cancelOperationType());
         assertEquals(10, ((Trade) result.get(2)).volume());
+    }
+
+    @Test
+    void test_auction_matching() {
+        orderbook.updateOrderbook(buildOrderCreate(899, 32.00, 2, OrderSideEnum.BID, "1"));
+        orderbook.updateOrderbook(buildOrderCreate(900, 32.00, 1, OrderSideEnum.BID, "2"));
+        orderbook.updateOrderbook(buildOrderCreate(911, 32.00, 8, OrderSideEnum.BID, "3"));
+        orderbook.updateOrderbook(buildOrderCreate(902, 31.90, 6, OrderSideEnum.BID, "4"));
+        orderbook.updateOrderbook(buildOrderCreate(910, 31.90, 3, OrderSideEnum.BID, "5"));
+        orderbook.updateOrderbook(buildOrderCreate(914, 31.90, 2, OrderSideEnum.BID, "6"));
+        orderbook.updateOrderbook(buildOrderCreate(913, 31.80, 2, OrderSideEnum.BID, "7"));
+
+        orderbook.updateOrderbook(buildOrderCreate(901, 31.90, 2, OrderSideEnum.ASK, "8"));
+        orderbook.updateOrderbook(buildOrderCreate(910, 31.90, 8, OrderSideEnum.ASK, "9"));
+        orderbook.updateOrderbook(buildOrderCreate(905, 32.00, 10, OrderSideEnum.ASK, "10"));
+        orderbook.updateOrderbook(buildOrderCreate(913, 32.00, 4, OrderSideEnum.ASK, "11"));
+        orderbook.updateOrderbook(buildOrderCreate(914, 32.00, 2, OrderSideEnum.ASK, "12"));
+        orderbook.updateOrderbook(buildOrderCreate(912, 32.10, 6, OrderSideEnum.ASK, "13"));
+        orderbook.updateOrderbook(buildOrderCreate(913, 32.10, 2, OrderSideEnum.ASK, "14"));
+        orderbook.updateOrderbook(buildOrderCreate(901, 32.20, 4, OrderSideEnum.ASK, "15"));
+        orderbook.updateOrderbook(buildOrderCreate(908, 32.20, 2, OrderSideEnum.ASK, "16"));
+        orderbook.updateOrderbook(buildOrderCreate(912, 32.20, 1, OrderSideEnum.ASK, "17"));
+
+        orderbook.updateState(StateChangeTypeEnum.AUCTION_TRADING);
+        orderbook.updateState(StateChangeTypeEnum.AUCTION_RUN);
+        TradeExecution tradeExecution = orderbook.runAuctionAlgorithm();
+        List<Trade> trades = tradeExecution.messages().stream().filter(Trade.class::isInstance).map(Trade.class::cast).toList();
+        assertEquals(4, trades.size());
+        assertEquals(11, trades.stream().mapToDouble(Trade::volume).sum());
+        assertEquals(11, orderbook.totalBidVolumeAtPriceLevel(1));
+        assertEquals(2, orderbook.totalBidVolumeAtPriceLevel(2));
+        assertEquals(15, orderbook.totalAskVolumeAtPriceLevel(1));
+        assertEquals(8, orderbook.totalAskVolumeAtPriceLevel(2));
+        assertEquals(7, orderbook.totalAskVolumeAtPriceLevel(3));
     }
 }

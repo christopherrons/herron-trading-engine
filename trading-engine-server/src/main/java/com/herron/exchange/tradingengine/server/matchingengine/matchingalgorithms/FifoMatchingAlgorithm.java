@@ -12,8 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.buildCancelOrder;
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.createMatchingMessages;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.*;
 
 public class FifoMatchingAlgorithm implements MatchingAlgorithm {
 
@@ -23,8 +22,24 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         this.activeOrders = activeOrders;
     }
 
+    @Override
     public List<Message> matchOrder(Order order) {
         return order.isActiveOrder() ? matchActiveOrder(order) : matchNonActiveOrders(order);
+    }
+
+    @Override
+    public List<Message> matchAtPrice(double price) {
+        Optional<Order> bestBidOrder = activeOrders.getBestBidOrder();
+        Optional<Order> bestAskOrder = activeOrders.getBestAskOrder();
+        if (bestBidOrder.isEmpty() || bestAskOrder.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        if (isMatch(bestBidOrder.get(), bestAskOrder.get())) {
+            return createAuctionMatchingMessages(bestBidOrder.get(), bestAskOrder.get(), price);
+
+        }
+        return Collections.emptyList();
     }
 
     private List<Message> matchNonActiveOrders(Order nonActiveOrder) {

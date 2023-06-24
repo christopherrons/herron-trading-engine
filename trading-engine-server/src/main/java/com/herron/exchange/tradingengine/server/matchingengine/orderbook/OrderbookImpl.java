@@ -8,6 +8,7 @@ import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.common.api.common.messages.HerronTradeExecution;
+import com.herron.exchange.tradingengine.server.matchingengine.api.AuctionAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import org.slf4j.Logger;
@@ -22,13 +23,18 @@ public class OrderbookImpl implements Orderbook {
     private final OrderbookData orderbookData;
     private final ActiveOrders activeOrders;
     private final MatchingAlgorithm matchingAlgorithm;
-    private StateChangeTypeEnum currentState;
+    private final AuctionAlgorithm auctionAlgorithm;
+    private StateChangeTypeEnum currentState = StateChangeTypeEnum.CLOSED;
 
 
-    public OrderbookImpl(OrderbookData orderbookData, ActiveOrders activeOrders, MatchingAlgorithm matchingAlgorithm) {
+    public OrderbookImpl(OrderbookData orderbookData,
+                         ActiveOrders activeOrders,
+                         MatchingAlgorithm matchingAlgorithm,
+                         AuctionAlgorithm auctionAlgorithm) {
         this.orderbookData = orderbookData;
         this.activeOrders = activeOrders;
         this.matchingAlgorithm = matchingAlgorithm;
+        this.auctionAlgorithm = auctionAlgorithm;
     }
 
     @Override
@@ -43,11 +49,15 @@ public class OrderbookImpl implements Orderbook {
     }
 
     @Override
-    public boolean isUpdating() {
+    public boolean isAccepting() {
         if (currentState == null) {
             return false;
         }
         if (currentState == StateChangeTypeEnum.TRADE_STOP) {
+            return false;
+        }
+
+        if (currentState == StateChangeTypeEnum.CLOSED) {
             return false;
         }
         return true;
@@ -177,8 +187,8 @@ public class OrderbookImpl implements Orderbook {
     @Override
     public boolean updateState(StateChangeTypeEnum toState) {
         if (currentState == null || currentState.isValidStateChange(toState)) {
-            currentState = toState;
             logger.info("Successfully updated orderbook: {} from state: {} to state: {}", getOrderbookId(), currentState, toState);
+            currentState = toState;
             return true;
         }
         logger.error("Could not updated orderbook: {} from state: {} to state: {}", getOrderbookId(), currentState, toState);
@@ -191,27 +201,49 @@ public class OrderbookImpl implements Orderbook {
     }
 
     @Override
-    public TradeExecution runMatchingAlgorithm(Order matchingOrder) {
+    public TradeExecution runMatchingAlgorithm(final Order matchingOrder) {
         if (matchingOrder.currentVolume() <= 0 || currentState != StateChangeTypeEnum.CONTINUOUS_TRADING) {
-            return new HerronTradeExecution(List.of(matchingOrder), Instant.now().toEpochMilli());
+            return new HerronTradeExecution(matchingOrder, List.of(), Instant.now().toEpochMilli());
         }
 
         final List<Message> messages = new ArrayList<>();
-        messages.add(matchingOrder);
         List<Message> matchingMessages;
+        Order updatedMatchingOrder = (Order) matchingOrder.getCopy();
         do {
-            matchingMessages = matchingAlgorithm.matchOrder(matchingOrder);
+            matchingMessages = matchingAlgorithm.matchOrder(updatedMatchingOrder);
             for (var message : matchingMessages) {
                 messages.add(message);
                 if (message instanceof Order order) {
                     updateOrderbook(order);
-                    if (order.orderId().equals(matchingOrder.orderId())) {
-                        matchingOrder = order;
+                    if (order.orderId().equals(updatedMatchingOrder.orderId())) {
+                        updatedMatchingOrder = order;
                     }
                 }
             }
-        } while (!matchingMessages.isEmpty() && matchingOrder.orderOperation() != OrderOperationEnum.DELETE);
+        } while (!matchingMessages.isEmpty() && updatedMatchingOrder.orderOperation() != OrderOperationEnum.DELETE);
 
-        return new HerronTradeExecution(messages, Instant.now().toEpochMilli());
+        return new HerronTradeExecution(matchingOrder, messages, Instant.now().toEpochMilli());
+    }
+
+    @Override
+    public TradeExecution runAuctionAlgorithm() {
+        if (currentState != StateChangeTypeEnum.AUCTION_RUN) {
+            return new HerronTradeExecution(null, List.of(), Instant.now().toEpochMilli());
+        }
+
+        var equilibriumPrice = auctionAlgorithm.calculateEquilibriumPrice();
+        final List<Message> messages = new ArrayList<>();
+        List<Message> matchingMessages;
+        do {
+            matchingMessages = matchingAlgorithm.matchAtPrice(equilibriumPrice.optimalPrice().equilibriumPrice());
+            for (var message : matchingMessages) {
+                messages.add(message);
+                if (message instanceof Order order) {
+                    updateOrderbook(order);
+                }
+            }
+        } while (!matchingMessages.isEmpty());
+
+        return new HerronTradeExecution(null, messages, Instant.now().toEpochMilli());
     }
 }

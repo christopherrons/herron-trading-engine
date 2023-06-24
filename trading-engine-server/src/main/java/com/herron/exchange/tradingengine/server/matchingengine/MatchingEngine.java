@@ -2,6 +2,7 @@ package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.*;
 import com.herron.exchange.common.api.common.enums.RequestStatus;
+import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.common.api.common.response.InvalidRequestResponse;
 import com.herron.exchange.common.api.common.wrappers.ThreadWrapper;
@@ -13,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.time.Instant;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -24,7 +24,7 @@ import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 public class MatchingEngine {
     private final Logger logger = LoggerFactory.getLogger(MatchingEngine.class);
-    private final Queue<Order> orderQueue = new ConcurrentLinkedQueue<>();
+    private final Queue<Message> messageQueue = new ConcurrentLinkedQueue<>();
     private final OrderbookCache orderbookCache = new OrderbookCache();
     private final ReferanceDataCache referanceDataCache = new ReferanceDataCache();
     private final PartitionKey partitionKey;
@@ -74,7 +74,7 @@ public class MatchingEngine {
         logger.info("Starting matching engine.");
         isMatching.set(true);
         pollThread.start();
-        queueLoggerThread.scheduleAtFixedRate(() -> logger.info("Message Queue size: {}", orderQueue.size()), 0, 60, TimeUnit.SECONDS);
+        queueLoggerThread.scheduleAtFixedRate(() -> logger.info("Message Queue size: {}", messageQueue.size()), 0, 60, TimeUnit.SECONDS);
     }
 
     public void stop() {
@@ -84,23 +84,30 @@ public class MatchingEngine {
     }
 
     private void runMatching() {
-        while (isMatching.get() || !orderQueue.isEmpty()) {
+        while (isMatching.get() || !messageQueue.isEmpty()) {
 
-            if (orderQueue.isEmpty()) {
+            if (messageQueue.isEmpty()) {
                 continue;
             }
 
-            Order order = orderQueue.poll();
+            Message message = messageQueue.poll();
 
-            if (order == null) {
+            if (message == null) {
                 continue;
             }
 
             try {
-                var tradeExecution = runMatchingAlgorithm(order);
-                auditTrail.broadcastMessage(Objects.requireNonNullElse(tradeExecution, order));
+                if (message instanceof StateChange stateChange) {
+                    var tradeExecution = updateState(stateChange);
+                    auditTrail.broadcastMessage(tradeExecution);
+
+                } else if (message instanceof Order order) {
+                    var tradeExecution = runMatchingAlgorithm(order);
+                    auditTrail.broadcastMessage(tradeExecution);
+                }
+
             } catch (Exception e) {
-                logger.warn("Unhandled exception for order: {}", order, e);
+                logger.warn("Unhandled exception for message: {}", message, e);
             }
         }
     }
@@ -127,9 +134,9 @@ public class MatchingEngine {
             return stateChangeRequest.createResponse(Instant.now().toEpochMilli(), stateChangeRequest.requestId(), RequestStatus.ERROR, errorMessage);
         }
 
-        var isUpdated = orderbook.updateState(stateChange.stateChangeType());
+        var isUpdated = orderbook.getState().isValidStateChange(stateChange.stateChangeType()) && messageQueue.add(stateChange);
         RequestStatus status = isUpdated ? RequestStatus.OK : RequestStatus.ERROR;
-        String message = isUpdated ? "Successfully updated state" : String.format("Could not update state from %s to %s.", orderbook.getState(), stateChange.stateChangeType());
+        String message = isUpdated ? "Successfully queued updated state" : String.format("Could not queue update state from %s to %s.", orderbook.getState(), stateChange.stateChangeType());
         return stateChangeRequest.createResponse(Instant.now().toEpochMilli(), stateChangeRequest.requestId(), status, message);
     }
 
@@ -142,7 +149,7 @@ public class MatchingEngine {
             return orderRequest.createResponse(Instant.now().toEpochMilli(), orderRequest.requestId(), RequestStatus.ERROR, errorMessage);
         }
 
-        var isQueued = orderbook.isUpdating() && orderQueue.add(orderRequest.order());
+        var isQueued = orderbook.isAccepting() && messageQueue.add(orderRequest.order());
         RequestStatus status = isQueued ? RequestStatus.OK : RequestStatus.ERROR;
         String message = isQueued ? "Successfully queued order." : "Could not queue order.";
         return orderRequest.createResponse(Instant.now().toEpochMilli(), orderRequest.requestId(), status, message);
@@ -159,8 +166,18 @@ public class MatchingEngine {
         return orderbook.runMatchingAlgorithm(order);
     }
 
+    private TradeExecution updateState(StateChange stateChange) {
+        var orderbook = orderbookCache.getOrderbook(stateChange.orderbookId());
+        if (orderbook == null) {
+            String errorMessage = String.format("Cannot update orderbook %s state to %s does not exist.", stateChange.orderbookId(), stateChange.stateChangeType());
+            logger.error(errorMessage);
+        }
+
+        return orderbook.updateState(stateChange.stateChangeType()) && stateChange.stateChangeType() == StateChangeTypeEnum.AUCTION_RUN ? orderbook.runAuctionAlgorithm() : null;
+    }
+
     public int getOrderQueueSize() {
-        return orderQueue.size();
+        return messageQueue.size();
     }
 
 }

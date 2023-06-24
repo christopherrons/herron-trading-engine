@@ -26,8 +26,9 @@ class ProRataOrderbookTest {
 
     @BeforeEach
     void init() {
-        var orderbookData = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.PRO_RATA, "eur", 0, 0);
+        var orderbookData = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.PRO_RATA, "eur", 0, 0, AuctionAlgorithmEnum.DUTCH);
         this.orderbook = OrderbookFactory.createOrderbook(orderbookData);
+        orderbook.updateState(StateChangeTypeEnum.PRE_TRADE);
         orderbook.updateState(StateChangeTypeEnum.CONTINUOUS_TRADING);
     }
 

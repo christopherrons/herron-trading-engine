@@ -7,6 +7,7 @@ import com.herron.exchange.common.api.common.enums.*;
 import com.herron.exchange.common.api.common.messages.HerronCancelOrder;
 import com.herron.exchange.common.api.common.messages.HerronTrade;
 import com.herron.exchange.common.api.common.messages.HerronUpdateOrder;
+import com.herron.exchange.common.api.common.model.MonetaryAmount;
 import com.herron.exchange.common.api.common.model.Participant;
 
 import java.time.Instant;
@@ -36,6 +37,32 @@ public class MatchingEngineUtils {
                 isBidSideAggressor,
                 tradeVolume,
                 isBidSideAggressor ? askOrder.monetaryAmount() : bidOrder.monetaryAmount(),
+                Instant.now().toEpochMilli(),
+                bidOrder.instrumentId(),
+                bidOrder.orderbookId()
+        );
+    }
+
+    public static Trade buildAuctionTrade(Order bidOrder,
+                                          Order askOrder,
+                                          double price,
+                                          double tradeVolume) {
+        boolean isBidSideAggressor;
+        if (bidOrder.orderType() == OrderTypeEnum.MARKET) {
+            isBidSideAggressor = true;
+        } else if (askOrder.orderType() == OrderTypeEnum.MARKET) {
+            isBidSideAggressor = false;
+        } else {
+            isBidSideAggressor = bidOrder.timeStampInMs() >= askOrder.timeStampInMs();
+        }
+        return new HerronTrade(bidOrder.participant(),
+                askOrder.participant(),
+                String.valueOf(CURRENT_TRADE_ID.getAndIncrement()),
+                bidOrder.orderId(),
+                askOrder.orderId(),
+                isBidSideAggressor,
+                tradeVolume,
+                new MonetaryAmount(price, bidOrder.monetaryAmount().currency()),
                 Instant.now().toEpochMilli(),
                 bidOrder.instrumentId(),
                 bidOrder.orderbookId()
@@ -74,6 +101,11 @@ public class MatchingEngineUtils {
                 orderCancelOperationTypeEnum);
     }
 
+    public static List<Message> createAuctionMatchingMessages(Order thisOrder, Order thatOrder, double price) {
+        final double tradeVolume = Math.min(thisOrder.currentVolume(), thatOrder.currentVolume());
+        return createAuctionMatchingMessages(thisOrder, thatOrder, price, tradeVolume);
+    }
+
     public static List<Message> createMatchingMessages(Order thisOrder, Order thatOrder) {
         final double tradeVolume = Math.min(thisOrder.currentVolume(), thatOrder.currentVolume());
         return createMatchingMessages(thisOrder, thatOrder, tradeVolume);
@@ -107,6 +139,40 @@ public class MatchingEngineUtils {
             trade = buildTrade(thisOrder, thatOrder, tradeVolume);
         } else {
             trade = buildTrade(thatOrder, thisOrder, tradeVolume);
+        }
+        matchingMessages.add(trade);
+
+        return matchingMessages;
+    }
+
+    public static List<Message> createAuctionMatchingMessages(Order thisOrder, Order thatOrder, double price, double tradeVolume) {
+        if (isSelfMatch(thisOrder.participant(), thatOrder.participant())) {
+            return createMatchingMessagesSelfMatched(thisOrder, thatOrder, tradeVolume);
+        }
+
+        final List<Message> matchingMessages = new ArrayList<>();
+
+        if (isFilled(thisOrder, tradeVolume)) {
+            matchingMessages.add(buildCancelOrder(thisOrder, OrderCancelOperationTypeEnum.FILLED));
+        }
+
+        if (isFilled(thatOrder, tradeVolume)) {
+            matchingMessages.add(buildCancelOrder(thatOrder, OrderCancelOperationTypeEnum.FILLED));
+        }
+
+        if (!isFilled(thisOrder, tradeVolume)) {
+            matchingMessages.add(buildUpdateOrder(thisOrder, tradeVolume, OrderUpdatedOperationTypeEnum.PARTIAL_FILL));
+        }
+
+        if (!isFilled(thatOrder, tradeVolume)) {
+            matchingMessages.add(buildUpdateOrder(thatOrder, tradeVolume, OrderUpdatedOperationTypeEnum.PARTIAL_FILL));
+        }
+
+        final Trade trade;
+        if (thisOrder.orderSide() == OrderSideEnum.BID) {
+            trade = buildAuctionTrade(thisOrder, thatOrder, price, tradeVolume);
+        } else {
+            trade = buildAuctionTrade(thatOrder, thisOrder, price, tradeVolume);
         }
         matchingMessages.add(trade);
 

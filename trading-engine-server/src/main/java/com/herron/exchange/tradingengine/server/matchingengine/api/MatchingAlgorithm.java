@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MatchingAlgorithm {
     List<Message> matchOrder(Order order);
+
+    List<Message> matchAtPrice(double price);
 }

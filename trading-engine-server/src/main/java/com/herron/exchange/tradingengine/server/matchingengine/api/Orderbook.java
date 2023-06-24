@@ -7,9 +7,11 @@ import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 
 public interface Orderbook {
 
+    TradeExecution runAuctionAlgorithm();
+
     void updateOrderbook(Order order);
 
-    boolean isUpdating();
+    boolean isAccepting();
 
     boolean updateState(StateChangeTypeEnum toState);
 

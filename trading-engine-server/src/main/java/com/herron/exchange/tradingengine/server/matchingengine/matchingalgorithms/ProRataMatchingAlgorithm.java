@@ -27,8 +27,23 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         this.minTradeVolume = minTradeVolume;
     }
 
+    @Override
     public List<Message> matchOrder(Order order) {
         return order.isActiveOrder() ? matchActiveOrder(order) : matchNonActiveOrders(order);
+    }
+
+    @Override
+    public List<Message> matchAtPrice(double price) {
+        Optional<Order> bestBidOrder = activeOrders.getBestBidOrder();
+        Optional<Order> bestAskOrder = activeOrders.getBestAskOrder();
+        if (bestBidOrder.isEmpty() || bestAskOrder.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        if (isMatch(bestBidOrder.get(), bestAskOrder.get().price())) {
+            return createAuctionMatchingMessages(bestBidOrder.get(), bestAskOrder.get(), price);
+        }
+        return Collections.emptyList();
     }
 
     private List<Message> matchNonActiveOrders(Order nonActiveOrder) {

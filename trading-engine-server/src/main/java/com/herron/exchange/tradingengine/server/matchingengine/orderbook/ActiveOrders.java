@@ -6,10 +6,7 @@ import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 import com.herron.exchange.tradingengine.server.matchingengine.orderbook.model.PriceLevel;
 
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Optional;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -185,7 +182,7 @@ public class ActiveOrders implements ActiveOrderReadOnly {
 
     @Override
     public Optional<PriceLevel> getBestBidPriceLevel() {
-        return getBestPriceLevel(OrderSideEnum.ASK);
+        return getBestPriceLevel(OrderSideEnum.BID);
     }
 
     @Override
@@ -231,6 +228,28 @@ public class ActiveOrders implements ActiveOrderReadOnly {
             }
         }
         return false;
+    }
+
+    public List<PriceLevel> getAskPriceLevelsLowerOrEqual(double bidPrice) {
+        List<PriceLevel> matchingPriceLevels = new ArrayList<>();
+        for (var priceLevel : askPriceToPriceLevel.values()) {
+            if (priceLevel.getPrice() > bidPrice) {
+                return matchingPriceLevels;
+            }
+            matchingPriceLevels.add(priceLevel);
+        }
+        return matchingPriceLevels;
+    }
+
+    public List<PriceLevel> getBidPriceLevelsHigherOrEqual(double askPrice) {
+        List<PriceLevel> matchingPriceLevels = new ArrayList<>();
+        for (var priceLevel : bidPriceToPriceLevel.values()) {
+            if (priceLevel.getPrice() < askPrice) {
+                return matchingPriceLevels;
+            }
+            matchingPriceLevels.add(priceLevel);
+        }
+        return matchingPriceLevels;
     }
 
 }

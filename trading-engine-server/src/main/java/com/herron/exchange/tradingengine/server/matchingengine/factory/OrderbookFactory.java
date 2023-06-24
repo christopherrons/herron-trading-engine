@@ -1,7 +1,10 @@
 package com.herron.exchange.tradingengine.server.matchingengine.factory;
 
 import com.herron.exchange.common.api.common.api.OrderbookData;
+import com.herron.exchange.common.api.common.enums.AuctionAlgorithmEnum;
+import com.herron.exchange.tradingengine.server.matchingengine.api.AuctionAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
+import com.herron.exchange.tradingengine.server.matchingengine.auctionalgorithms.DutchAuctionAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
 import com.herron.exchange.tradingengine.server.matchingengine.comparator.ProRataOrderBookComparator;
 import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.FifoMatchingAlgorithm;
@@ -16,13 +19,28 @@ public class OrderbookFactory {
             case FIFO -> {
                 var activeOrders = new ActiveOrders(new FifoOrderBookComparator());
                 var matchingAlgorithm = new FifoMatchingAlgorithm(activeOrders);
-                yield new OrderbookImpl(orderbookData, activeOrders, matchingAlgorithm);
+                var auctionAlgorithm = createAuctionAlgorithm(orderbookData.auctionAlgorithm(), activeOrders);
+                if (auctionAlgorithm == null) {
+                    yield null;
+                }
+                yield new OrderbookImpl(orderbookData, activeOrders, matchingAlgorithm, auctionAlgorithm);
             }
             case PRO_RATA -> {
                 var activeOrders = new ActiveOrders(new ProRataOrderBookComparator());
                 var matchingAlgorithm = new ProRataMatchingAlgorithm(activeOrders, orderbookData.minTradeVolume());
-                yield new OrderbookImpl(orderbookData, activeOrders, matchingAlgorithm);
+                var auctionAlgorithm = createAuctionAlgorithm(orderbookData.auctionAlgorithm(), activeOrders);
+                if (auctionAlgorithm == null) {
+                    yield null;
+                }
+                yield new OrderbookImpl(orderbookData, activeOrders, matchingAlgorithm, auctionAlgorithm);
             }
+            default -> null;
+        };
+    }
+
+    private static AuctionAlgorithm createAuctionAlgorithm(AuctionAlgorithmEnum auctionAlgorithmEnum, ActiveOrders activeOrders) {
+        return switch (auctionAlgorithmEnum) {
+            case DUTCH -> new DutchAuctionAlgorithm(activeOrders);
             default -> null;
         };
     }
