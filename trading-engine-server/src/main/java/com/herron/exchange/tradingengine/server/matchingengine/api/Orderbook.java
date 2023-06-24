@@ -1,7 +1,6 @@
 package com.herron.exchange.tradingengine.server.matchingengine.api;
 
 import com.herron.exchange.common.api.common.api.Order;
-import com.herron.exchange.common.api.common.api.StateChange;
 import com.herron.exchange.common.api.common.api.TradeExecution;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
@@ -10,7 +9,9 @@ public interface Orderbook {
 
     void updateOrderbook(Order order);
 
-    void updateState(StateChange stateChange);
+    boolean isUpdating();
+
+    boolean updateState(StateChangeTypeEnum toState);
 
     StateChangeTypeEnum getState();
 

@@ -1,15 +1,15 @@
 package com.herron.exchange.tradingengine.server.matchingengine.orderbook;
 
-import com.herron.exchange.common.api.common.api.*;
+import com.herron.exchange.common.api.common.api.Message;
+import com.herron.exchange.common.api.common.api.Order;
+import com.herron.exchange.common.api.common.api.OrderbookData;
+import com.herron.exchange.common.api.common.api.TradeExecution;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.common.api.common.messages.HerronTradeExecution;
-import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
-import com.herron.exchange.tradingengine.server.matchingengine.comparator.FifoOrderBookComparator;
-import com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms.FifoMatchingAlgorithm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +18,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class OrderbookImpl implements Orderbook {
-    private final Logger logger = LoggerFactory.getLogger(MatchingEngine.class);
-
-    private StateChangeTypeEnum stateChangeTypeEnum = StateChangeTypeEnum.INVALID_STATE_CHANGE;
+    private final Logger logger = LoggerFactory.getLogger(OrderbookImpl.class);
     private final OrderbookData orderbookData;
     private final ActiveOrders activeOrders;
     private final MatchingAlgorithm matchingAlgorithm;
+    private StateChangeTypeEnum currentState;
+
 
     public OrderbookImpl(OrderbookData orderbookData, ActiveOrders activeOrders, MatchingAlgorithm matchingAlgorithm) {
         this.orderbookData = orderbookData;
@@ -31,15 +31,26 @@ public class OrderbookImpl implements Orderbook {
         this.matchingAlgorithm = matchingAlgorithm;
     }
 
+    @Override
     public synchronized void updateOrderbook(Order order) {
         if (order.isActiveOrder()) {
             switch (order.orderOperation()) {
                 case CREATE -> addOrder(order);
                 case UPDATE -> updateOrder(order);
                 case DELETE -> removeOrder(order);
-
             }
         }
+    }
+
+    @Override
+    public boolean isUpdating() {
+        if (currentState == null) {
+            return false;
+        }
+        if (currentState == StateChangeTypeEnum.TRADE_STOP) {
+            return false;
+        }
+        return true;
     }
 
     private void updateOrder(Order order) {
@@ -164,22 +175,29 @@ public class OrderbookImpl implements Orderbook {
     }
 
     @Override
-    public void updateState(StateChange stateChange) {
-        stateChangeTypeEnum = stateChange.stateChangeType();
+    public boolean updateState(StateChangeTypeEnum toState) {
+        if (currentState == null || currentState.isValidStateChange(toState)) {
+            currentState = toState;
+            logger.info("Successfully updated orderbook: {} from state: {} to state: {}", getOrderbookId(), currentState, toState);
+            return true;
+        }
+        logger.error("Could not updated orderbook: {} from state: {} to state: {}", getOrderbookId(), currentState, toState);
+        return false;
     }
 
     @Override
     public StateChangeTypeEnum getState() {
-        return stateChangeTypeEnum;
+        return currentState;
     }
 
     @Override
     public TradeExecution runMatchingAlgorithm(Order matchingOrder) {
-        if (matchingOrder.currentVolume() <= 0 || getState() != StateChangeTypeEnum.CONTINUOUS_TRADING) {
-            return null;
+        if (matchingOrder.currentVolume() <= 0 || currentState != StateChangeTypeEnum.CONTINUOUS_TRADING) {
+            return new HerronTradeExecution(List.of(matchingOrder), Instant.now().toEpochMilli());
         }
 
         final List<Message> messages = new ArrayList<>();
+        messages.add(matchingOrder);
         List<Message> matchingMessages;
         do {
             matchingMessages = matchingAlgorithm.matchOrder(matchingOrder);

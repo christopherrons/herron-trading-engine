@@ -24,7 +24,7 @@ public class ActiveOrders implements ActiveOrderReadOnly {
     }
 
     public void updateOrder(Order order) {
-        removeOrder(order.orderId());
+        removeOrder(order);
         addOrder(order);
     }
 

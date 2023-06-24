@@ -1,6 +1,7 @@
 package com.herron.exchange.tradingengine.server;
 
 import com.herron.exchange.common.api.common.api.Message;
+import com.herron.exchange.common.api.common.api.Response;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.model.PartitionKey;
 import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
@@ -21,11 +22,11 @@ public class TradingEngine {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void queueMessage(Message message) {
-        queueMessage(DEFAULT_PARTITION_KEY, message);
+    public Response addMessage(Message message) {
+        return addMessage(DEFAULT_PARTITION_KEY, message);
     }
 
-    public void queueMessage(PartitionKey partitionKey, Message message) {
-        partitionKeyToMatchingEngine.computeIfAbsent(partitionKey, k -> new MatchingEngine(partitionKey, kafkaTemplate)).queueMessage(message);
+    public Response addMessage(PartitionKey partitionKey, Message message) {
+        return partitionKeyToMatchingEngine.computeIfAbsent(partitionKey, k -> new MatchingEngine(partitionKey, kafkaTemplate)).handleMessage(message);
     }
 }

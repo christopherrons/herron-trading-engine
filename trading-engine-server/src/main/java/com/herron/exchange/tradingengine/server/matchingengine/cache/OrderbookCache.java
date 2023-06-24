@@ -14,8 +14,16 @@ public class OrderbookCache {
 
     private final Map<String, Orderbook> orderbookIdToOrderBook = new ConcurrentHashMap<>();
 
-    public void createOrderbook(OrderbookData orderbookData) {
-        orderbookIdToOrderBook.computeIfAbsent(orderbookData.orderbookId(), k -> OrderbookFactory.createOrderbook(orderbookData));
+    public boolean createOrderbook(OrderbookData orderbookData) {
+        if (orderbookIdToOrderBook.containsKey(orderbookData.orderbookId())) {
+            return true;
+        }
+        var orderbook = OrderbookFactory.createOrderbook(orderbookData);
+        if (orderbook == null) {
+            return false;
+        }
+        orderbookIdToOrderBook.put(orderbookData.orderbookId(), orderbook);
+        return true;
     }
 
     public Orderbook getOrderbook(String orderbookId) {

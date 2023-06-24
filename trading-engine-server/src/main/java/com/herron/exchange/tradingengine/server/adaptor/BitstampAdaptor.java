@@ -55,7 +55,7 @@ public class BitstampAdaptor {
 
         try {
             Message message = broadcastMessage.message();
-            tradingEngine.queueMessage(partitionKey, message);
+            tradingEngine.addMessage(partitionKey, message);
         } catch (Exception e) {
             LOGGER.warn("Unhandled exception for record: {}, decoded-message: {}, {}", consumerRecord, broadcastMessage, e);
         }

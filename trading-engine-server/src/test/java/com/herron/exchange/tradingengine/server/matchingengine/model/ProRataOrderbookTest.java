@@ -6,7 +6,6 @@ import com.herron.exchange.common.api.common.api.Trade;
 import com.herron.exchange.common.api.common.api.UpdateOrder;
 import com.herron.exchange.common.api.common.enums.*;
 import com.herron.exchange.common.api.common.messages.HerronOrderbookData;
-import com.herron.exchange.common.api.common.messages.HerronStateChange;
 import com.herron.exchange.common.api.common.model.Member;
 import com.herron.exchange.common.api.common.model.Participant;
 import com.herron.exchange.common.api.common.model.User;
@@ -29,7 +28,7 @@ class ProRataOrderbookTest {
     void init() {
         var orderbookData = new HerronOrderbookData("orderbookId", "instrumentId", MatchingAlgorithmEnum.PRO_RATA, "eur", 0, 0);
         this.orderbook = OrderbookFactory.createOrderbook(orderbookData);
-        orderbook.updateState(new HerronStateChange("orderbookId", StateChangeTypeEnum.CONTINUOUS_TRADING, 0));
+        orderbook.updateState(StateChangeTypeEnum.CONTINUOUS_TRADING);
     }
 
     @Test
