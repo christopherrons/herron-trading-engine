@@ -79,8 +79,8 @@ class FifoOrderbookTest {
         assertEquals(2, orderbook.totalNumberOfBidOrders());
         assertEquals(1, orderbook.totalNumberOfAskOrders());
 
-        orderbook.removeOrder("2");
-        orderbook.removeOrder("3");
+        orderbook.updateOrderbook(buildOrderDelete(0, 100, 10, OrderSideEnum.BID, "2"));
+        orderbook.updateOrderbook(buildOrderDelete(4, 101, 10, OrderSideEnum.ASK, "3"));
         assertEquals(1, orderbook.totalNumberOfActiveOrders());
         assertEquals(1, orderbook.totalNumberOfBidOrders());
         assertEquals(0, orderbook.totalNumberOfAskOrders());

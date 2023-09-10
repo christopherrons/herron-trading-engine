@@ -29,6 +29,14 @@ public class MessageCreatorTestUtils {
         return buildOrder(OrderOperationEnum.UPDATE, timeStampInMs, price, volume, orderSideEnum, orderId);
     }
 
+    public static Order buildOrderDelete(long timeStampInMs,
+                                         double price,
+                                         double volume,
+                                         OrderSideEnum orderSideEnum,
+                                         String orderId) {
+        return buildOrder(OrderOperationEnum.DELETE, timeStampInMs, price, volume, orderSideEnum, orderId);
+    }
+
     public static Order buildOrderCreate(long timeStampInMs,
                                          double price,
                                          double volume,

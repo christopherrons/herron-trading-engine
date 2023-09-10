@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 
 import java.time.Instant;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,7 +24,7 @@ import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 public class MatchingEngine {
     private final Logger logger = LoggerFactory.getLogger(MatchingEngine.class);
-    private final Queue<Message> messageQueue = new ConcurrentLinkedQueue<>();
+    private final BlockingQueue<Message> messageQueue = new PriorityBlockingQueue<>();
     private final OrderbookCache orderbookCache = new OrderbookCache();
     private final ReferanceDataCache referanceDataCache = new ReferanceDataCache();
     private final PartitionKey partitionKey;
@@ -84,13 +84,18 @@ public class MatchingEngine {
     }
 
     private void runMatching() {
+        Message message;
         while (isMatching.get() || !messageQueue.isEmpty()) {
 
             if (messageQueue.isEmpty()) {
                 continue;
             }
 
-            Message message = messageQueue.poll();
+            try {
+                message = messageQueue.poll(500, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                continue;
+            }
 
             if (message == null) {
                 continue;
