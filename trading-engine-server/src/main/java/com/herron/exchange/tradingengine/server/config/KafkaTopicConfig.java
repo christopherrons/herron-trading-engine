@@ -17,7 +17,7 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic auditTrailTopic() {
         return TopicBuilder
-                .name(KafkaTopicEnum.HERRON_AUDIT_TRAIL.getTopicName())
+                .name(KafkaTopicEnum.AUDIT_TRAIL.getTopicName())
                 .partitions(nrOfPartitions)
                 .build();
     }

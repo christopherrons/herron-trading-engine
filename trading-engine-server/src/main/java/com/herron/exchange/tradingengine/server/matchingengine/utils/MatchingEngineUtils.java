@@ -1,14 +1,19 @@
 package com.herron.exchange.tradingengine.server.matchingengine.utils;
 
-import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.api.Order;
-import com.herron.exchange.common.api.common.api.Trade;
-import com.herron.exchange.common.api.common.enums.*;
-import com.herron.exchange.common.api.common.messages.HerronCancelOrder;
-import com.herron.exchange.common.api.common.messages.HerronTrade;
-import com.herron.exchange.common.api.common.messages.HerronUpdateOrder;
-import com.herron.exchange.common.api.common.model.MonetaryAmount;
-import com.herron.exchange.common.api.common.model.Participant;
+
+import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
+import com.herron.exchange.common.api.common.api.trading.orders.Order;
+import com.herron.exchange.common.api.common.api.trading.trades.Trade;
+import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
+import com.herron.exchange.common.api.common.enums.OrderSideEnum;
+import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
+import com.herron.exchange.common.api.common.enums.OrderUpdatedOperationTypeEnum;
+import com.herron.exchange.common.api.common.messages.common.Participant;
+import com.herron.exchange.common.api.common.messages.common.Price;
+import com.herron.exchange.common.api.common.messages.common.Volume;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultCancelOrder;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultTrade;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultUpdateOrder;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -20,103 +25,89 @@ public class MatchingEngineUtils {
 
     public static Trade buildTrade(Order bidOrder,
                                    Order askOrder,
-                                   double tradeVolume) {
+                                   Volume tradeVolume) {
         boolean isBidSideAggressor;
         if (bidOrder.orderType() == OrderTypeEnum.MARKET) {
             isBidSideAggressor = true;
         } else if (askOrder.orderType() == OrderTypeEnum.MARKET) {
             isBidSideAggressor = false;
         } else {
-            isBidSideAggressor = bidOrder.timeStampInMs() >= askOrder.timeStampInMs();
+            isBidSideAggressor = bidOrder.timeOfEventMs() >= askOrder.timeOfEventMs();
         }
-        return new HerronTrade(bidOrder.participant(),
-                askOrder.participant(),
-                String.valueOf(CURRENT_TRADE_ID.getAndIncrement()),
-                bidOrder.orderId(),
-                askOrder.orderId(),
-                isBidSideAggressor,
-                tradeVolume,
-                isBidSideAggressor ? askOrder.monetaryAmount() : bidOrder.monetaryAmount(),
-                Instant.now().toEpochMilli(),
-                bidOrder.instrumentId(),
-                bidOrder.orderbookId()
-        );
+        return ImmutableDefaultTrade.builder()
+                .bidParticipant(bidOrder.participant())
+                .askParticipant(askOrder.participant())
+                .tradeId(String.valueOf(CURRENT_TRADE_ID.getAndIncrement()))
+                .bidOrderId(bidOrder.orderId())
+                .askOrderId(askOrder.orderId())
+                .isBidSideAggressor(isBidSideAggressor)
+                .volume(tradeVolume)
+                .price(isBidSideAggressor ? askOrder.price() : bidOrder.price())
+                .timeOfEventMs(Instant.now().toEpochMilli())
+                .instrumentId(bidOrder.instrumentId())
+                .orderbookId(bidOrder.orderbookId())
+                .build();
     }
 
     public static Trade buildAuctionTrade(Order bidOrder,
                                           Order askOrder,
-                                          double price,
-                                          double tradeVolume) {
+                                          Price price,
+                                          Volume tradeVolume) {
         boolean isBidSideAggressor;
         if (bidOrder.orderType() == OrderTypeEnum.MARKET) {
             isBidSideAggressor = true;
         } else if (askOrder.orderType() == OrderTypeEnum.MARKET) {
             isBidSideAggressor = false;
         } else {
-            isBidSideAggressor = bidOrder.timeStampInMs() >= askOrder.timeStampInMs();
+            isBidSideAggressor = bidOrder.timeOfEventMs() >= askOrder.timeOfEventMs();
         }
-        return new HerronTrade(bidOrder.participant(),
-                askOrder.participant(),
-                String.valueOf(CURRENT_TRADE_ID.getAndIncrement()),
-                bidOrder.orderId(),
-                askOrder.orderId(),
-                isBidSideAggressor,
-                tradeVolume,
-                new MonetaryAmount(price, bidOrder.monetaryAmount().currency()),
-                Instant.now().toEpochMilli(),
-                bidOrder.instrumentId(),
-                bidOrder.orderbookId()
-        );
+        return ImmutableDefaultTrade.builder()
+                .bidParticipant(bidOrder.participant())
+                .askParticipant(askOrder.participant())
+                .tradeId(String.valueOf(CURRENT_TRADE_ID.getAndIncrement()))
+                .bidOrderId(bidOrder.orderId())
+                .askOrderId(askOrder.orderId())
+                .isBidSideAggressor(isBidSideAggressor)
+                .volume(tradeVolume)
+                .price(price)
+                .timeOfEventMs(Instant.now().toEpochMilli())
+                .instrumentId(bidOrder.instrumentId())
+                .orderbookId(bidOrder.orderbookId())
+                .build();
     }
 
-    public static Order buildUpdateOrder(Order order, double tradeVolume, OrderUpdatedOperationTypeEnum orderUpdatedOperationTypeEnum) {
-        return new HerronUpdateOrder(OrderOperationEnum.UPDATE,
-                order.participant(),
-                order.orderId(),
-                order.orderSide(),
-                order.initialVolume(),
-                order.currentVolume() - tradeVolume,
-                order.monetaryAmount(),
-                order.timeStampInMs(),
-                order.instrumentId(),
-                order.orderbookId(),
-                order.orderExecutionType(),
-                order.orderType(),
-                orderUpdatedOperationTypeEnum);
+    public static Order buildUpdateOrder(Order order, Volume tradeVolume, OrderUpdatedOperationTypeEnum orderUpdatedOperationTypeEnum) {
+        return ImmutableDefaultUpdateOrder.builder()
+                .from(order)
+                .updateOperationType(orderUpdatedOperationTypeEnum)
+                .currentVolume(order.currentVolume().subtract(tradeVolume))
+                .build();
     }
 
     public static Order buildCancelOrder(Order order, OrderCancelOperationTypeEnum orderCancelOperationTypeEnum) {
-        return new HerronCancelOrder(OrderOperationEnum.DELETE,
-                order.participant(),
-                order.orderId(),
-                order.orderSide(),
-                order.initialVolume(),
-                orderCancelOperationTypeEnum == OrderCancelOperationTypeEnum.FILLED ? 0 : order.currentVolume(),
-                order.monetaryAmount(),
-                order.timeStampInMs(),
-                order.instrumentId(),
-                order.orderbookId(),
-                order.orderExecutionType(),
-                order.orderType(),
-                orderCancelOperationTypeEnum);
+        return ImmutableDefaultCancelOrder.builder()
+                .from(order)
+                .cancelOperationType(orderCancelOperationTypeEnum)
+                .currentVolume(orderCancelOperationTypeEnum == OrderCancelOperationTypeEnum.FILLED ? Volume.ZERO : order.currentVolume())
+                .build();
     }
 
-    public static List<Message> createAuctionMatchingMessages(Order thisOrder, Order thatOrder, double price) {
-        final double tradeVolume = Math.min(thisOrder.currentVolume(), thatOrder.currentVolume());
+    public static List<OrderbookEvent> createAuctionMatchingMessages(Order thisOrder, Order thatOrder, Price price) {
+        final Volume tradeVolume = thisOrder.currentVolume().min(thatOrder.currentVolume());
         return createAuctionMatchingMessages(thisOrder, thatOrder, price, tradeVolume);
     }
 
-    public static List<Message> createMatchingMessages(Order thisOrder, Order thatOrder) {
-        final double tradeVolume = Math.min(thisOrder.currentVolume(), thatOrder.currentVolume());
+    public static List<OrderbookEvent> createMatchingMessages(Order thisOrder, Order thatOrder) {
+        final Volume tradeVolume = thisOrder.currentVolume().min(thatOrder.currentVolume());
         return createMatchingMessages(thisOrder, thatOrder, tradeVolume);
     }
 
-    public static List<Message> createMatchingMessages(Order thisOrder, Order thatOrder, double tradeVolume) {
+    public static List<OrderbookEvent> createMatchingMessages(Order thisOrder, Order thatOrder, Volume tradeVolume) {
         if (isSelfMatch(thisOrder.participant(), thatOrder.participant())) {
             return createMatchingMessagesSelfMatched(thisOrder, thatOrder, tradeVolume);
         }
 
-        final List<Message> matchingMessages = new ArrayList<>();
+        final List<OrderbookEvent> matchingMessages = new ArrayList<>();
 
         if (isFilled(thisOrder, tradeVolume)) {
             matchingMessages.add(buildCancelOrder(thisOrder, OrderCancelOperationTypeEnum.FILLED));
@@ -145,12 +136,12 @@ public class MatchingEngineUtils {
         return matchingMessages;
     }
 
-    public static List<Message> createAuctionMatchingMessages(Order thisOrder, Order thatOrder, double price, double tradeVolume) {
+    public static List<OrderbookEvent> createAuctionMatchingMessages(Order thisOrder, Order thatOrder, Price price, Volume tradeVolume) {
         if (isSelfMatch(thisOrder.participant(), thatOrder.participant())) {
             return createMatchingMessagesSelfMatched(thisOrder, thatOrder, tradeVolume);
         }
 
-        final List<Message> matchingMessages = new ArrayList<>();
+        final List<OrderbookEvent> matchingMessages = new ArrayList<>();
 
         if (isFilled(thisOrder, tradeVolume)) {
             matchingMessages.add(buildCancelOrder(thisOrder, OrderCancelOperationTypeEnum.FILLED));
@@ -179,9 +170,9 @@ public class MatchingEngineUtils {
         return matchingMessages;
     }
 
-    public static List<Message> createMatchingMessagesSelfMatched(Order thisOrder, Order thatOrder, double tradeVolume) {
+    public static List<OrderbookEvent> createMatchingMessagesSelfMatched(Order thisOrder, Order thatOrder, Volume tradeVolume) {
 
-        List<Message> matchingMessages = new ArrayList<>();
+        List<OrderbookEvent> matchingMessages = new ArrayList<>();
 
         if (isFilled(thisOrder, tradeVolume)) {
             matchingMessages.add(buildCancelOrder(thisOrder, OrderCancelOperationTypeEnum.SELF_MATCH));
@@ -202,8 +193,8 @@ public class MatchingEngineUtils {
         return matchingMessages;
     }
 
-    private static boolean isFilled(Order order, double tradeVolume) {
-        return order.currentVolume() - tradeVolume <= 0;
+    private static boolean isFilled(Order order, Volume tradeVolume) {
+        return order.currentVolume().subtract(tradeVolume).leq(0);
     }
 
     private static boolean isSelfMatch(Participant bidParticipant, Participant askParticipant) {

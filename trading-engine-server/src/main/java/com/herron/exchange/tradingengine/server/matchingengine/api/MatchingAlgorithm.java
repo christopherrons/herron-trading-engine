@@ -1,12 +1,13 @@
 package com.herron.exchange.tradingengine.server.matchingengine.api;
 
-import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.api.Order;
+import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
+import com.herron.exchange.common.api.common.api.trading.orders.Order;
+import com.herron.exchange.common.api.common.messages.common.Price;
 
 import java.util.List;
 
 public interface MatchingAlgorithm {
-    List<Message> matchOrder(Order order);
+    List<OrderbookEvent> matchOrder(Order incomingOrder);
 
-    List<Message> matchAtPrice(double price);
+    List<OrderbookEvent> matchAtPrice(Price price);
 }

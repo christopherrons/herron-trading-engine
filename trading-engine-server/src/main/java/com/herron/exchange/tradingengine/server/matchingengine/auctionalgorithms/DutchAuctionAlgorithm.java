@@ -1,5 +1,7 @@
 package com.herron.exchange.tradingengine.server.matchingengine.auctionalgorithms;
 
+import com.herron.exchange.common.api.common.messages.common.Price;
+import com.herron.exchange.common.api.common.messages.common.Volume;
 import com.herron.exchange.tradingengine.server.matchingengine.api.AuctionAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.auctionalgorithms.model.EquilibriumPriceResult;
 import com.herron.exchange.tradingengine.server.matchingengine.orderbook.ActiveOrders;
@@ -32,25 +34,23 @@ public class DutchAuctionAlgorithm implements AuctionAlgorithm {
     }
 
     private EquilibriumPriceResult calculateEquilibriumPrice(List<PriceLevel> bidPriceLevels, List<PriceLevel> askPriceLevels) {
-        Set<Double> possibleEquilibriumPrice = new HashSet<>();
+        Set<Price> possibleEquilibriumPrice = new HashSet<>();
         bidPriceLevels.forEach(pl -> possibleEquilibriumPrice.add(pl.getPrice()));
         askPriceLevels.forEach(pl -> possibleEquilibriumPrice.add(pl.getPrice()));
 
-        EquilibriumPriceResult.VolumeMatchAtPriceItem maxVolumeMatchAtPrice = new EquilibriumPriceResult.VolumeMatchAtPriceItem(0, 0, 0);
+        EquilibriumPriceResult.VolumeMatchAtPriceItem maxVolumeMatchAtPrice = new EquilibriumPriceResult.VolumeMatchAtPriceItem(Price.ZERO, Volume.ZERO, Volume.ZERO);
         List<EquilibriumPriceResult.VolumeMatchAtPriceItem> volumeMatchAtPriceItems = new ArrayList<>();
         for (var eqPrice : possibleEquilibriumPrice) {
-            var bidVolume = bidPriceLevels.stream().filter(pl -> pl.getPrice() >= eqPrice).map(PriceLevel::volumeAtPriceLevel).mapToDouble(volume -> volume).sum();
-            var askVolume = askPriceLevels.stream().filter(pl -> pl.getPrice() <= eqPrice).map(PriceLevel::volumeAtPriceLevel).mapToDouble(volume -> volume).sum();
+            var bidVolume = bidPriceLevels.stream().filter(pl -> pl.getPrice().geq(eqPrice)).map(PriceLevel::volumeAtPriceLevel).reduce(Volume.ZERO, Volume::add);
+            var askVolume = askPriceLevels.stream().filter(pl -> pl.getPrice().leq(eqPrice)).map(PriceLevel::volumeAtPriceLevel).reduce(Volume.ZERO, Volume::add);
 
             var matchingVolumeAtPrice = new EquilibriumPriceResult.VolumeMatchAtPriceItem(eqPrice, bidVolume, askVolume);
             volumeMatchAtPriceItems.add(matchingVolumeAtPrice);
-            if (maxVolumeMatchAtPrice.matchedVolume() < matchingVolumeAtPrice.matchedVolume()) {
+            if (maxVolumeMatchAtPrice.matchedVolume().lt(matchingVolumeAtPrice.matchedVolume())) {
                 maxVolumeMatchAtPrice = matchingVolumeAtPrice;
             }
         }
 
         return new EquilibriumPriceResult(maxVolumeMatchAtPrice, volumeMatchAtPriceItems);
     }
-
-
 }

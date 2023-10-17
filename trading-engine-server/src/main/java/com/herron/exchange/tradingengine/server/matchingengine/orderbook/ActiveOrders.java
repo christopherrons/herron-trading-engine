@@ -1,67 +1,89 @@
 package com.herron.exchange.tradingengine.server.matchingengine.orderbook;
 
-import com.herron.exchange.common.api.common.api.Order;
+import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.enums.OrderSideEnum;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
+import com.herron.exchange.common.api.common.messages.common.Price;
+import com.herron.exchange.common.api.common.messages.common.Volume;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 import com.herron.exchange.tradingengine.server.matchingengine.orderbook.model.PriceLevel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-
 public class ActiveOrders implements ActiveOrderReadOnly {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ActiveOrders.class);
     private final Map<String, Order> orderIdToOrder = new ConcurrentHashMap<>();
-    private final TreeMap<Double, PriceLevel> bidPriceToPriceLevel = new TreeMap<>(Comparator.reverseOrder());
-    private final TreeMap<Double, PriceLevel> askPriceToPriceLevel = new TreeMap<>();
+    private final TreeMap<Price, PriceLevel> bidPriceToPriceLevel = new TreeMap<>(Comparator.comparing(Price::getValue).reversed());
+    private final TreeMap<Price, PriceLevel> askPriceToPriceLevel = new TreeMap<>(Comparator.comparing(Price::getValue));
     private final Comparator<? super Order> comparator;
 
     public ActiveOrders(Comparator<? super Order> comparator) {
         this.comparator = comparator;
     }
 
-    public void updateOrder(Order order) {
-        removeOrder(order);
-        addOrder(order);
+    public boolean updateOrder(Order order) {
+        return removeOrder(order) && addOrder(order);
     }
 
-    public void addOrder(Order order) {
+    public boolean addOrder(Order order) {
         PriceLevel priceLevel = findOrCreatePriceLevel(order);
-        priceLevel.add(order);
-        orderIdToOrder.putIfAbsent(order.orderId(), order);
-    }
-
-    public void removeOrder(Order order) {
-        removeOrder(order.orderId());
-    }
-
-    public void removeOrder(String orderId) {
-        if (!orderIdToOrder.containsKey(orderId)) {
-            return;
+        if (priceLevel == null) {
+            return false;
         }
+
+        orderIdToOrder.put(order.orderId(), order);
+        return priceLevel.add(order);
+    }
+
+    public boolean removeOrder(Order order) {
+        return removeOrder(order.orderId());
+    }
+
+    public boolean removeOrder(String orderId) {
+        if (!orderIdToOrder.containsKey(orderId)) {
+            LOGGER.error("Cannot remove order id {}, order does not exist.", orderId);
+            return false;
+        }
+
         Order order = orderIdToOrder.remove(orderId);
         PriceLevel priceLevel = findOrCreatePriceLevel(order);
-        if (priceLevel != null) {
-            priceLevel.remove(order);
+
+        if (priceLevel != null && priceLevel.remove(order)) {
             if (priceLevel.isEmpty()) {
-                removePriceLevel(order);
+                return removePriceLevel(order);
             }
+        } else {
+            LOGGER.error("Cannot remove order {}, price level does not exist.", order);
+            return false;
         }
+
+        return true;
     }
 
     private PriceLevel findOrCreatePriceLevel(Order order) {
         return switch (order.orderSide()) {
             case BID -> bidPriceToPriceLevel.computeIfAbsent(order.price(), key -> new PriceLevel(order.price(), comparator));
             case ASK -> askPriceToPriceLevel.computeIfAbsent(order.price(), key -> new PriceLevel(order.price(), comparator));
-            case INVALID_ORDER_SIDE -> null;
+            case INVALID_ORDER_SIDE -> {
+                LOGGER.error("Could not create or find price level, invalid order side for order {}.", order);
+                yield null;
+            }
         };
     }
 
-    private void removePriceLevel(Order order) {
+    private boolean removePriceLevel(Order order) {
         switch (order.orderSide()) {
             case BID -> bidPriceToPriceLevel.remove(order.price());
             case ASK -> askPriceToPriceLevel.remove(order.price());
+            case INVALID_ORDER_SIDE -> {
+                LOGGER.error("Could not remove price level, invalid order side for order {}.", order);
+                return false;
+            }
         }
+        return true;
     }
 
     public int totalNumberOfPriceLevels() {
@@ -80,12 +102,12 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return orderIdToOrder.get(orderId);
     }
 
-    public double getBestBidPrice() {
-        return getBestBidOrder().map(Order::price).orElse(0.0);
+    public Price getBestBidPrice() {
+        return getBestBidOrder().map(Order::price).orElse(Price.ZERO);
     }
 
-    public double getBestAskPrice() {
-        return getBestAskOrder().map(Order::price).orElse(0.0);
+    public Price getBestAskPrice() {
+        return getBestAskOrder().map(Order::price).orElse(Price.ZERO);
     }
 
     public Optional<Order> getBestBidOrder() {
@@ -124,52 +146,56 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return orderIdToOrder.size();
     }
 
-    public double totalOrderVolume() {
-        return totalBidVolume() + totalAskVolume();
+    public Volume totalOrderVolume() {
+        return totalBidVolume().add(totalAskVolume());
     }
 
-    public double totalBidVolume() {
-        return bidPriceToPriceLevel.values().stream().mapToDouble(PriceLevel::volumeAtPriceLevel).sum();
+    public Volume totalBidVolume() {
+        return bidPriceToPriceLevel.values().stream().map(PriceLevel::volumeAtPriceLevel).reduce(Volume.ZERO, Volume::add);
     }
 
-    public double totalAskVolume() {
-        return askPriceToPriceLevel.values().stream().mapToDouble(PriceLevel::volumeAtPriceLevel).sum();
+    public Volume totalAskVolume() {
+        return askPriceToPriceLevel.values().stream().map(PriceLevel::volumeAtPriceLevel).reduce(Volume.ZERO, Volume::add);
     }
 
-    public double totalVolumeAtPriceLevel(int priceLevel) {
-        return totalBidVolumeAtPriceLevel(priceLevel) + totalAskVolumeAtPriceLevel(priceLevel);
+    public Volume totalVolumeAtPriceLevel(int priceLevel) {
+        return totalBidVolumeAtPriceLevel(priceLevel).add(totalAskVolumeAtPriceLevel(priceLevel));
     }
 
-    public double totalBidVolumeAtPriceLevel(int priceLevel) {
+    public Volume totalBidVolumeAtPriceLevel(int priceLevel) {
         return bidPriceToPriceLevel.values().stream()
                 .skip(priceLevel - 1L)
-                .findFirst().map(PriceLevel::volumeAtPriceLevel)
-                .orElse(0.0);
+                .findFirst()
+                .map(PriceLevel::volumeAtPriceLevel)
+                .orElse(Volume.ZERO);
     }
 
-    public double totalAskVolumeAtPriceLevel(int priceLevel) {
+    public Volume totalAskVolumeAtPriceLevel(int priceLevel) {
         return askPriceToPriceLevel.values().stream()
                 .skip(priceLevel - 1L)
-                .findFirst().map(PriceLevel::volumeAtPriceLevel)
-                .orElse(0.0);
+                .findFirst()
+                .map(PriceLevel::volumeAtPriceLevel)
+                .orElse(Volume.ZERO);
     }
 
-    public double getAskPriceAtPriceLevel(int priceLevel) {
+    public Price getAskPriceAtPriceLevel(int priceLevel) {
         return askPriceToPriceLevel.values().stream()
                 .skip(priceLevel - 1L)
-                .findFirst().map(PriceLevel::getPrice)
-                .orElse(0.0);
+                .findFirst()
+                .map(PriceLevel::getPrice)
+                .orElse(Price.ZERO);
     }
 
-    public double getBidPriceAtPriceLevel(int priceLevel) {
+    public Price getBidPriceAtPriceLevel(int priceLevel) {
         return bidPriceToPriceLevel.values().stream()
                 .skip(priceLevel - 1L)
-                .findFirst().map(PriceLevel::getPrice)
-                .orElse(0.0);
+                .findFirst()
+                .map(PriceLevel::getPrice)
+                .orElse(Price.ZERO);
     }
 
     public boolean hasBidAndAskOrders() {
-        return bidPriceToPriceLevel.size() != 0 && askPriceToPriceLevel.size() != 0;
+        return !bidPriceToPriceLevel.isEmpty() && !askPriceToPriceLevel.isEmpty();
     }
 
     public boolean isTotalFillPossible(Order order) {
@@ -199,15 +225,15 @@ public class ActiveOrders implements ActiveOrderReadOnly {
     }
 
     private boolean isTotalAskFillPossible(Order order) {
-        double availableVolume = 0;
+        Volume availableVolume = Volume.ZERO;
         for (var level : bidPriceToPriceLevel.values()) {
-            if (order.orderType() == OrderTypeEnum.MARKET || order.price() <= level.getPrice()) {
-                availableVolume += level.volumeAtPriceLevel();
+            if (order.orderType() == OrderTypeEnum.MARKET || order.price().leq(level.getPrice())) {
+                availableVolume = availableVolume.add(level.volumeAtPriceLevel());
             } else {
                 return false;
             }
 
-            if (order.currentVolume() <= availableVolume) {
+            if (order.currentVolume().leq(availableVolume)) {
                 return true;
             }
         }
@@ -215,25 +241,25 @@ public class ActiveOrders implements ActiveOrderReadOnly {
     }
 
     private boolean isTotalBidFillPossible(Order order) {
-        double availableVolume = 0;
+        Volume availableVolume = Volume.ZERO;
         for (var level : askPriceToPriceLevel.values()) {
-            if (order.price() >= level.getPrice()) {
-                availableVolume += level.volumeAtPriceLevel();
+            if (order.orderType() == OrderTypeEnum.MARKET || order.price().geq(level.getPrice())) {
+                availableVolume = availableVolume.add(level.volumeAtPriceLevel());
             } else {
                 return false;
             }
 
-            if (order.currentVolume() <= availableVolume) {
+            if (order.currentVolume().leq(availableVolume)) {
                 return true;
             }
         }
         return false;
     }
 
-    public List<PriceLevel> getAskPriceLevelsLowerOrEqual(double bidPrice) {
+    public List<PriceLevel> getAskPriceLevelsLowerOrEqual(Price bidPrice) {
         List<PriceLevel> matchingPriceLevels = new ArrayList<>();
         for (var priceLevel : askPriceToPriceLevel.values()) {
-            if (priceLevel.getPrice() > bidPrice) {
+            if (priceLevel.getPrice().gt(bidPrice)) {
                 return matchingPriceLevels;
             }
             matchingPriceLevels.add(priceLevel);
@@ -241,15 +267,14 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return matchingPriceLevels;
     }
 
-    public List<PriceLevel> getBidPriceLevelsHigherOrEqual(double askPrice) {
+    public List<PriceLevel> getBidPriceLevelsHigherOrEqual(Price askPrice) {
         List<PriceLevel> matchingPriceLevels = new ArrayList<>();
         for (var priceLevel : bidPriceToPriceLevel.values()) {
-            if (priceLevel.getPrice() < askPrice) {
+            if (priceLevel.getPrice().lt(askPrice)) {
                 return matchingPriceLevels;
             }
             matchingPriceLevels.add(priceLevel);
         }
         return matchingPriceLevels;
     }
-
 }

@@ -1,8 +1,8 @@
 spring:
   kafka:
-    bootstrap-servers: "exchange-1.int.herron.se:9092"
+    bootstrap-servers: "localhost:9092"
 
 kafka:
   topic:
     audit-trail:
-      nr-of-partitions: 2
+      nr-of-partitions: 1

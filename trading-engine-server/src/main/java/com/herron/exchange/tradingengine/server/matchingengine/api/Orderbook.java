@@ -1,15 +1,17 @@
 package com.herron.exchange.tradingengine.server.matchingengine.api;
 
-import com.herron.exchange.common.api.common.api.Order;
-import com.herron.exchange.common.api.common.api.TradeExecution;
+import com.herron.exchange.common.api.common.api.trading.orders.Order;
+import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
+import com.herron.exchange.common.api.common.messages.common.Price;
+import com.herron.exchange.common.api.common.messages.common.Volume;
 
 public interface Orderbook {
 
     TradeExecution runAuctionAlgorithm();
 
-    void updateOrderbook(Order order);
+    boolean updateOrderbook(Order order);
 
     boolean isAccepting();
 
@@ -27,15 +29,15 @@ public interface Orderbook {
 
     Order getOrder(String orderId);
 
-    double totalOrderVolume();
+    Volume totalOrderVolume();
 
-    double totalBidVolume();
+    Volume totalBidVolume();
 
-    double totalAskVolume();
+    Volume totalAskVolume();
 
-    double getBestBidPrice();
+    Price getBestBidPrice();
 
-    double getBestAskPrice();
+    Price getBestAskPrice();
 
     long totalNumberOfBidOrders();
 
@@ -43,11 +45,11 @@ public interface Orderbook {
 
     long totalNumberOfActiveOrders();
 
-    double totalVolumeAtPriceLevel(int priceLevel);
+    Volume totalVolumeAtPriceLevel(int priceLevel);
 
-    double totalBidVolumeAtPriceLevel(int priceLevel);
+    Volume totalBidVolumeAtPriceLevel(int priceLevel);
 
-    double totalAskVolumeAtPriceLevel(int priceLevel);
+    Volume totalAskVolumeAtPriceLevel(int priceLevel);
 
     int totalNumberOfPriceLevels();
 
@@ -57,9 +59,9 @@ public interface Orderbook {
 
     String getInstrumentId();
 
-    void removeOrder(String orderId);
+    boolean removeOrder(String orderId);
 
-    double getAskPriceAtPriceLevel(int priceLevel);
+    Price getAskPriceAtPriceLevel(int priceLevel);
 
-    double getBidPriceAtPriceLevel(int priceLevel);
+    Price getBidPriceAtPriceLevel(int priceLevel);
 }

@@ -1,6 +1,6 @@
 package com.herron.exchange.tradingengine.server.matchingengine.cache;
 
-import com.herron.exchange.common.api.common.api.OrderbookData;
+import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.factory.OrderbookFactory;
 import org.slf4j.Logger;
@@ -14,19 +14,7 @@ public class OrderbookCache {
 
     private final Map<String, Orderbook> orderbookIdToOrderBook = new ConcurrentHashMap<>();
 
-    public boolean createOrderbook(OrderbookData orderbookData) {
-        if (orderbookIdToOrderBook.containsKey(orderbookData.orderbookId())) {
-            return true;
-        }
-        var orderbook = OrderbookFactory.createOrderbook(orderbookData);
-        if (orderbook == null) {
-            return false;
-        }
-        orderbookIdToOrderBook.put(orderbookData.orderbookId(), orderbook);
-        return true;
-    }
-
-    public Orderbook getOrderbook(String orderbookId) {
-        return orderbookIdToOrderBook.get(orderbookId);
+    public Orderbook getOrCreateOrderbook(String orderbookId) {
+        return orderbookIdToOrderBook.computeIfAbsent(orderbookId, obId -> OrderbookFactory.createOrderbook(ReferenceDataCache.getCache().getOrderbookData(obId)));
     }
 }

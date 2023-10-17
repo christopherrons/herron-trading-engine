@@ -1,21 +1,38 @@
 package com.herron.exchange.tradingengine.server.matchingengine.orderbook.model;
 
-import com.herron.exchange.common.api.common.api.Order;
+
+import com.herron.exchange.common.api.common.api.trading.orders.Order;
+import com.herron.exchange.common.api.common.messages.common.Price;
+import com.herron.exchange.common.api.common.messages.common.Volume;
 
 import java.util.Comparator;
 import java.util.TreeSet;
-import java.util.function.Predicate;
 
 public class PriceLevel extends TreeSet<Order> {
 
-    private final double price;
+    private final Price price;
+    private Volume volume = Volume.create(0);
 
-    public PriceLevel(double price, Comparator<? super Order> comparator) {
+    public PriceLevel(Price price, Comparator<? super Order> comparator) {
         super(comparator);
         this.price = price;
     }
 
-    public double getPrice() {
+    @Override
+    public boolean add(Order order) {
+        volume = volume.add(order.currentVolume());
+        return super.add(order);
+    }
+
+    public boolean remove(Order order) {
+        if (super.remove(order)) {
+            volume = volume.subtract(order.currentVolume());
+            return true;
+        }
+        return false;
+    }
+
+    public Price getPrice() {
         return price;
     }
 
@@ -23,15 +40,8 @@ public class PriceLevel extends TreeSet<Order> {
         return size();
     }
 
-    public double volumeAtPriceLevel() {
-        return stream().mapToDouble(Order::currentVolume).sum(); //TODO: Fix that this is updated at each insert / cencel
-    }
-
-    public double volumeAtPriceLevel(Predicate<Order> filter) {
-        return stream()
-                .filter(filter)
-                .mapToDouble(Order::currentVolume)
-                .sum();
+    public Volume volumeAtPriceLevel() {
+        return volume;
     }
 
 }

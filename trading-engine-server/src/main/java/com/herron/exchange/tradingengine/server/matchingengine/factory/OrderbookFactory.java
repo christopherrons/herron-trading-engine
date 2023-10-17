@@ -1,6 +1,6 @@
 package com.herron.exchange.tradingengine.server.matchingengine.factory;
 
-import com.herron.exchange.common.api.common.api.OrderbookData;
+import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
 import com.herron.exchange.common.api.common.enums.AuctionAlgorithmEnum;
 import com.herron.exchange.tradingengine.server.matchingengine.api.AuctionAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;

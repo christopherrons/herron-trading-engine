@@ -1,9 +1,10 @@
 package com.herron.exchange.tradingengine.server.matchingengine.matchingalgorithms;
 
-import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.api.Order;
+import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
+import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
+import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 
@@ -23,12 +24,12 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
     }
 
     @Override
-    public List<Message> matchOrder(Order order) {
-        return order.isActiveOrder() ? matchActiveOrder(order) : matchNonActiveOrders(order);
+    public List<OrderbookEvent> matchOrder(Order incomingOrder) {
+        return incomingOrder.isActiveOrder() ? matchActiveOrder(incomingOrder) : matchNonActiveOrders(incomingOrder);
     }
 
     @Override
-    public List<Message> matchAtPrice(double price) {
+    public List<OrderbookEvent> matchAtPrice(Price price) {
         Optional<Order> bestBidOrder = activeOrders.getBestBidOrder();
         Optional<Order> bestAskOrder = activeOrders.getBestAskOrder();
         if (bestBidOrder.isEmpty() || bestAskOrder.isEmpty()) {
@@ -42,7 +43,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return Collections.emptyList();
     }
 
-    private List<Message> matchNonActiveOrders(Order nonActiveOrder) {
+    private List<OrderbookEvent> matchNonActiveOrders(Order nonActiveOrder) {
         return switch (nonActiveOrder.orderExecutionType()) {
             case FOK -> matchFillOrKill(nonActiveOrder);
             case FAK -> matchFillAndKill(nonActiveOrder);
@@ -50,21 +51,21 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         };
     }
 
-    private List<Message> matchActiveOrder(Order order) {
-        Optional<Order> opposingBestOptional = getOpposingBestOrder(order);
+    private List<OrderbookEvent> matchActiveOrder(Order incomingOrder) {
+        Optional<Order> opposingBestOptional = getOpposingBestOrder(incomingOrder);
         if (opposingBestOptional.isEmpty()) {
             return Collections.emptyList();
         }
 
         Order opposingBest = opposingBestOptional.get();
 
-        if (isMatch(order, opposingBest)) {
-            return createMatchingMessages(order, opposingBest);
+        if (isMatch(incomingOrder, opposingBest)) {
+            return createMatchingMessages(incomingOrder, opposingBest);
         }
         return Collections.emptyList();
     }
 
-    public List<Message> matchFillOrKill(Order fillOrKillOrder) {
+    public List<OrderbookEvent> matchFillOrKill(Order fillOrKillOrder) {
         if (!activeOrders.isTotalFillPossible(fillOrKillOrder)) {
             return createKillMessage(fillOrKillOrder);
         }
@@ -79,7 +80,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return createMatchingMessages(fillOrKillOrder, opposingBest);
     }
 
-    public List<Message> matchFillAndKill(Order fillAndKillOrder) {
+    public List<OrderbookEvent> matchFillAndKill(Order fillAndKillOrder) {
         Optional<Order> opposingBestOptional = getOpposingBestOrder(fillAndKillOrder);
         if (opposingBestOptional.isEmpty()) {
             return createKillMessage(fillAndKillOrder);
@@ -93,7 +94,7 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return createKillMessage(fillAndKillOrder);
     }
 
-    public List<Message> matchMarketOrder(Order marketOrder) {
+    public List<OrderbookEvent> matchMarketOrder(Order marketOrder) {
         Optional<Order> opposingBestOptional = getOpposingBestOrder(marketOrder);
         if (opposingBestOptional.isEmpty()) {
             return createKillMessage(marketOrder);
@@ -104,27 +105,27 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return createMatchingMessages(marketOrder, opposingBest);
     }
 
-    private Optional<Order> getOpposingBestOrder(Order order) {
-        return switch (order.orderSide()) {
+    private Optional<Order> getOpposingBestOrder(Order incomingOrder) {
+        return switch (incomingOrder.orderSide()) {
             case BID -> activeOrders.getBestAskOrder();
             case ASK -> activeOrders.getBestBidOrder();
             default -> Optional.empty();
         };
     }
 
-    private boolean isMatch(Order order, Order opposingBestOrder) {
-        if (order.orderType() == OrderTypeEnum.MARKET) {
+    private boolean isMatch(Order incomingOrder, Order opposingBestOrder) {
+        if (incomingOrder.orderType() == OrderTypeEnum.MARKET) {
             return true;
         }
-        return switch (order.orderSide()) {
-            case BID -> order.price() >= opposingBestOrder.price();
-            case ASK -> order.price() <= opposingBestOrder.price();
+        return switch (incomingOrder.orderSide()) {
+            case BID -> incomingOrder.price().geq(opposingBestOrder.price());
+            case ASK -> incomingOrder.price().leq(opposingBestOrder.price());
             default -> false;
         };
     }
 
-    private List<Message> createKillMessage(Order nonActiveOrder) {
-        List<Message> matchingMessages = new ArrayList<>();
+    private List<OrderbookEvent> createKillMessage(Order nonActiveOrder) {
+        List<OrderbookEvent> matchingMessages = new ArrayList<>();
         matchingMessages.add(buildCancelOrder(nonActiveOrder, OrderCancelOperationTypeEnum.KILLED));
         return matchingMessages;
     }
