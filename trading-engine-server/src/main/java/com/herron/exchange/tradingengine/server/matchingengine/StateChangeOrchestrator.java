@@ -54,8 +54,10 @@ public class StateChangeOrchestrator {
             scheduleOpenAuctionTrading(orderbookData);
             scheduleOpenAuctionRun(orderbookData);
             scheduleContinuous(orderbookData);
-            //scheduleCloseAuctionTrading(orderbookData);
-            //scheduleCloseAuctionRun(orderbookData);
+            scheduleCloseAuctionTrading(orderbookData);
+            scheduleCloseAuctionRun(orderbookData);
+            schedulePostTrade(orderbookData);
+            scheduleClosed(orderbookData);
         }
 
         var count = stateChangeInitializedLatch.getCount();
@@ -141,6 +143,32 @@ public class StateChangeOrchestrator {
                 calculateInitialDelay(triggerTime),
                 orderbookData.orderbookId(),
                 CLOSING_AUCTION_RUN
+        );
+    }
+
+    private void schedulePostTrade(OrderbookData orderbookData) {
+        var tradingHours = orderbookData.tradingCalendar().postTradingHours();
+        if (tradingHours == null) {
+            return;
+        }
+        var triggerTime = orderbookData.tradingCalendar().openAuctionTradingHours().start();
+        scheduleStateChange(
+                calculateInitialDelay(triggerTime),
+                orderbookData.orderbookId(),
+                POST_TRADE
+        );
+    }
+
+    private void scheduleClosed(OrderbookData orderbookData) {
+        var tradingHours = orderbookData.tradingCalendar().closedTradingHours();
+        if (tradingHours == null) {
+            return;
+        }
+        var triggerTime = orderbookData.tradingCalendar().openAuctionTradingHours().start();
+        scheduleStateChange(
+                calculateInitialDelay(triggerTime),
+                orderbookData.orderbookId(),
+                CLOSED
         );
     }
 
