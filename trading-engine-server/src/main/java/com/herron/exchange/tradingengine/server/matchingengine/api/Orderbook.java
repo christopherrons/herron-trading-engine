@@ -3,7 +3,7 @@ package com.herron.exchange.tradingengine.server.matchingengine.api;
 import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
-import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
+import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.common.api.common.messages.common.Volume;
 
@@ -25,9 +25,9 @@ public interface Orderbook {
 
     boolean isAccepting();
 
-    boolean updateState(StateChangeTypeEnum toState);
+    boolean updateState(TradingStatesEnum toState);
 
-    StateChangeTypeEnum getState();
+    TradingStatesEnum getState();
 
     TradeExecution runMatchingAlgorithm(Order order);
 

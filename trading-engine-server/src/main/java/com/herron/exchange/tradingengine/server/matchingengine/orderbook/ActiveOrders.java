@@ -67,10 +67,6 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return switch (order.orderSide()) {
             case BID -> bidPriceToPriceLevel.computeIfAbsent(order.price(), key -> new PriceLevel(order.price(), comparator));
             case ASK -> askPriceToPriceLevel.computeIfAbsent(order.price(), key -> new PriceLevel(order.price(), comparator));
-            case INVALID_ORDER_SIDE -> {
-                LOGGER.error("Could not create or find price level, invalid order side for order {}.", order);
-                yield null;
-            }
         };
     }
 
@@ -78,10 +74,6 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         switch (order.orderSide()) {
             case BID -> bidPriceToPriceLevel.remove(order.price());
             case ASK -> askPriceToPriceLevel.remove(order.price());
-            case INVALID_ORDER_SIDE -> {
-                LOGGER.error("Could not remove price level, invalid order side for order {}.", order);
-                return false;
-            }
         }
         return true;
     }
@@ -122,7 +114,6 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return switch (orderSide) {
             case BID -> bidPriceToPriceLevel.values().stream().findFirst().map(PriceLevel::first);
             case ASK -> askPriceToPriceLevel.values().stream().findFirst().map(PriceLevel::first);
-            case INVALID_ORDER_SIDE -> Optional.empty();
         };
     }
 
@@ -138,7 +129,6 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return switch (OrderSideEnum.fromValue(orderSide)) {
             case BID -> bidPriceToPriceLevel.values().stream().mapToLong(PriceLevel::nrOfOrdersAtPriceLevel).sum();
             case ASK -> askPriceToPriceLevel.values().stream().mapToLong(PriceLevel::nrOfOrdersAtPriceLevel).sum();
-            case INVALID_ORDER_SIDE -> 0;
         };
     }
 
@@ -220,7 +210,6 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return switch (orderSide) {
             case BID -> bidPriceToPriceLevel.values().stream().findFirst();
             case ASK -> askPriceToPriceLevel.values().stream().findFirst();
-            case INVALID_ORDER_SIDE -> Optional.empty();
         };
     }
 

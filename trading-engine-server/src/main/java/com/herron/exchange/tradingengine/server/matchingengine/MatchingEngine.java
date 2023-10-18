@@ -20,7 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.herron.exchange.common.api.common.enums.StateChangeTypeEnum.*;
+import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 public class MatchingEngine {
@@ -123,18 +123,18 @@ public class MatchingEngine {
     private void updateOrderbook(StateChange stateChange) {
         var orderbook = orderbookCache.getOrCreateOrderbook(stateChange.orderbookId());
         if (orderbook == null) {
-            LOGGER.error("Cannot update orderbook {} state to {} does not exist.", stateChange.orderbookId(), stateChange.stateChangeType());
+            LOGGER.error("Cannot update orderbook {} state to {} does not exist.", stateChange.orderbookId(), stateChange.tradeState());
             return;
         }
 
-        if (orderbook.updateState(stateChange.stateChangeType())) {
+        if (orderbook.updateState(stateChange.tradeState())) {
             broadcast(AUDIT_TRAIL_KEY, stateChange);
 
-            if (stateChange.stateChangeType() == OPEN_AUCTION_RUN) {
+            if (stateChange.tradeState() == OPEN_AUCTION_RUN) {
                 runAuction(orderbook);
                 orderbook.updateState(CONTINUOUS_TRADING);
 
-            } else if (stateChange.stateChangeType() == CLOSING_AUCTION_RUN) {
+            } else if (stateChange.tradeState() == CLOSING_AUCTION_RUN) {
                 runAuction(orderbook);
                 orderbook.updateState(POST_TRADE);
             }

@@ -2,9 +2,7 @@ package com.herron.exchange.tradingengine.server.matchingengine.matchingalgorith
 
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
 import com.herron.exchange.common.api.common.api.trading.orders.Order;
-import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
-import com.herron.exchange.common.api.common.enums.OrderUpdatedOperationTypeEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.common.api.common.messages.common.Volume;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
@@ -16,6 +14,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.KILLED;
+import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.PARTIAL_FILL;
 import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.*;
 
 public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
@@ -133,7 +133,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
 
             remainingTradeVolume -= minTradeVolumeWeighted;
             result.addAll(createMatchingMessages(incomingOrder, opposingOrder, Volume.create(minTradeVolumeWeighted)));
-            incomingOrder = buildUpdateOrder(incomingOrder, Volume.create(minTradeVolumeWeighted), OrderUpdatedOperationTypeEnum.PARTIAL_FILL);
+            incomingOrder = buildUpdateOrder(incomingOrder, Volume.create(minTradeVolumeWeighted), PARTIAL_FILL);
         }
         return result;
     }
@@ -159,7 +159,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
 
     private List<OrderbookEvent> createKillMessage(Order nonActiveOrder) {
         List<OrderbookEvent> matchingMessages = new ArrayList<>();
-        matchingMessages.add(buildCancelOrder(nonActiveOrder, OrderCancelOperationTypeEnum.KILLED));
+        matchingMessages.add(buildCancelOrder(nonActiveOrder, KILLED));
         return matchingMessages;
     }
 

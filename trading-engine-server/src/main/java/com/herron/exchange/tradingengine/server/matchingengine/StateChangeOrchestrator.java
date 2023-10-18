@@ -3,7 +3,7 @@ package com.herron.exchange.tradingengine.server.matchingengine;
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
 import com.herron.exchange.common.api.common.api.trading.statechange.StateChange;
 import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
-import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
+import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
 import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultStateChange;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.slf4j.Logger;
@@ -17,7 +17,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import static com.herron.exchange.common.api.common.enums.StateChangeTypeEnum.*;
+import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
+
 
 public class StateChangeOrchestrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(StateChangeOrchestrator.class);
@@ -146,17 +147,17 @@ public class StateChangeOrchestrator {
         return duration.toMillis();
     }
 
-    private void scheduleStateChange(long initialDelay, String orderbookId, StateChangeTypeEnum stateChangeType) {
+    private void scheduleStateChange(long initialDelay, String orderbookId, TradingStatesEnum tradingState) {
         scheduler.schedule(() -> {
-            var stateChange = createStateChange(orderbookId, stateChangeType);
+            var stateChange = createStateChange(orderbookId, tradingState);
             tradingEngine.queueStateChange(stateChange);
         }, initialDelay, TimeUnit.MILLISECONDS);
     }
 
-    private StateChange createStateChange(String orderbookId, StateChangeTypeEnum stateChangeType) {
+    private StateChange createStateChange(String orderbookId, TradingStatesEnum tradingState) {
         return ImmutableDefaultStateChange.builder()
                 .timeOfEventMs(Instant.now().toEpochMilli())
-                .stateChangeType(stateChangeType)
+                .tradeState(tradingState)
                 .orderbookId(orderbookId)
                 .build();
     }

@@ -6,7 +6,7 @@ import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
-import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
+import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.common.api.common.messages.common.Volume;
 import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultTradeExecution;
@@ -21,7 +21,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.herron.exchange.common.api.common.enums.StateChangeTypeEnum.*;
+import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
+
 
 public class OrderbookImpl implements Orderbook {
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderbookImpl.class);
@@ -29,7 +30,7 @@ public class OrderbookImpl implements Orderbook {
     private final ActiveOrders activeOrders;
     private final MatchingAlgorithm matchingAlgorithm;
     private final AuctionAlgorithm auctionAlgorithm;
-    private StateChangeTypeEnum currentState = CLOSED;
+    private TradingStatesEnum currentState = CLOSED;
 
     public OrderbookImpl(OrderbookData orderbookData,
                          ActiveOrders activeOrders,
@@ -66,7 +67,7 @@ public class OrderbookImpl implements Orderbook {
         if (currentState == null) {
             return false;
         }
-        if (currentState == TRADE_STOP) {
+        if (currentState == TRADE_HALT) {
             return false;
         }
 
@@ -208,7 +209,7 @@ public class OrderbookImpl implements Orderbook {
     }
 
     @Override
-    public boolean updateState(StateChangeTypeEnum toState) {
+    public boolean updateState(TradingStatesEnum toState) {
         if (toState == currentState) {
             return true;
         }
@@ -223,7 +224,7 @@ public class OrderbookImpl implements Orderbook {
     }
 
     @Override
-    public StateChangeTypeEnum getState() {
+    public TradingStatesEnum getState() {
         return currentState;
     }
 

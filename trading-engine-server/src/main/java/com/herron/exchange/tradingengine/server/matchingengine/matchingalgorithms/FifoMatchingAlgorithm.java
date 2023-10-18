@@ -2,7 +2,6 @@ package com.herron.exchange.tradingengine.server.matchingengine.matchingalgorith
 
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
 import com.herron.exchange.common.api.common.api.trading.orders.Order;
-import com.herron.exchange.common.api.common.enums.OrderCancelOperationTypeEnum;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderReadOnly;
@@ -13,6 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.KILLED;
 import static com.herron.exchange.tradingengine.server.matchingengine.utils.MatchingEngineUtils.*;
 
 public class FifoMatchingAlgorithm implements MatchingAlgorithm {
@@ -109,7 +109,6 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return switch (incomingOrder.orderSide()) {
             case BID -> activeOrders.getBestAskOrder();
             case ASK -> activeOrders.getBestBidOrder();
-            default -> Optional.empty();
         };
     }
 
@@ -120,13 +119,12 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
         return switch (incomingOrder.orderSide()) {
             case BID -> incomingOrder.price().geq(opposingBestOrder.price());
             case ASK -> incomingOrder.price().leq(opposingBestOrder.price());
-            default -> false;
         };
     }
 
     private List<OrderbookEvent> createKillMessage(Order nonActiveOrder) {
         List<OrderbookEvent> matchingMessages = new ArrayList<>();
-        matchingMessages.add(buildCancelOrder(nonActiveOrder, OrderCancelOperationTypeEnum.KILLED));
+        matchingMessages.add(buildCancelOrder(nonActiveOrder, KILLED));
         return matchingMessages;
     }
 

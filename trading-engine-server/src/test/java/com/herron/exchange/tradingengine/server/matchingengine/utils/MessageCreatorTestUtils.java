@@ -3,16 +3,21 @@ package com.herron.exchange.tradingengine.server.matchingengine.utils;
 
 import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.api.trading.trades.Trade;
-import com.herron.exchange.common.api.common.enums.*;
+import com.herron.exchange.common.api.common.enums.OrderSideEnum;
+import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
+import com.herron.exchange.common.api.common.enums.TimeInForceEnum;
 import com.herron.exchange.common.api.common.messages.common.*;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultAddOrder;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultCancelOrder;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultLimitOrder;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultMarketOrder;
 import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultTrade;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultUpdateOrder;
 
 import java.time.Instant;
 
-import static com.herron.exchange.common.api.common.enums.TimeInForceEnum.FILL;
+import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.*;
+import static com.herron.exchange.common.api.common.enums.OrderOperationEnum.*;
+import static com.herron.exchange.common.api.common.enums.OrderTypeEnum.MARKET;
+import static com.herron.exchange.common.api.common.enums.TimeInForceEnum.SESSION;
+
 
 public class MessageCreatorTestUtils {
     private static final Participant PARTICIPANT = new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString()));
@@ -22,7 +27,7 @@ public class MessageCreatorTestUtils {
                                          double volume,
                                          OrderSideEnum orderSideEnum,
                                          String orderId) {
-        return ImmutableDefaultUpdateOrder.builder()
+        return ImmutableDefaultLimitOrder.builder()
                 .participant(PARTICIPANT)
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -32,9 +37,9 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .timeInForce(FILL)
-                .orderType(OrderTypeEnum.LIMIT)
-                .updateOperationType(OrderUpdatedOperationTypeEnum.EXTERNAL_UPDATE)
+                .timeInForce(SESSION)
+                .orderOperation(UPDATE)
+                .orderOperationCause(EXTERNAL_UPDATE)
                 .build();
     }
 
@@ -43,7 +48,7 @@ public class MessageCreatorTestUtils {
                                          double volume,
                                          OrderSideEnum orderSideEnum,
                                          String orderId) {
-        return ImmutableDefaultCancelOrder.builder()
+        return ImmutableDefaultLimitOrder.builder()
                 .participant(PARTICIPANT)
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -53,9 +58,9 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .timeInForce(FILL)
-                .orderType(OrderTypeEnum.LIMIT)
-                .cancelOperationType(OrderCancelOperationTypeEnum.FILLED)
+                .timeInForce(SESSION)
+                .orderOperationCause(FILLED)
+                .orderOperation(CANCEL)
                 .build();
     }
 
@@ -65,7 +70,7 @@ public class MessageCreatorTestUtils {
                                       OrderSideEnum orderSideEnum,
                                       String orderId,
                                       Participant participant) {
-        return ImmutableDefaultAddOrder.builder()
+        return ImmutableDefaultLimitOrder.builder()
                 .participant(participant)
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -75,9 +80,9 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .timeInForce(FILL)
-                .orderType(OrderTypeEnum.LIMIT)
-                .addOperationType(OrderAddOperationTypeEnum.NEW_ORDER)
+                .timeInForce(SESSION)
+                .orderOperation(INSERT)
+                .orderOperationCause(NEW_ORDER)
                 .build();
     }
 
@@ -88,7 +93,21 @@ public class MessageCreatorTestUtils {
                                       String orderId,
                                       TimeInForceEnum timeInForceEnum,
                                       OrderTypeEnum orderTypeEnum) {
-        return ImmutableDefaultAddOrder.builder()
+        if (orderTypeEnum == MARKET) {
+            return ImmutableDefaultMarketOrder.builder()
+                    .participant(new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString())))
+                    .orderId(orderId)
+                    .orderSide(orderSideEnum)
+                    .currentVolume(Volume.create(volume))
+                    .initialVolume(Volume.create(volume))
+                    .timeOfEventMs(timeStampInMs)
+                    .instrumentId("inststrumenId")
+                    .orderbookId("orderbookId")
+                    .orderOperationCause(NEW_ORDER)
+                    .orderOperation(INSERT)
+                    .build();
+        }
+        return ImmutableDefaultLimitOrder.builder()
                 .participant(new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString())))
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -99,9 +118,8 @@ public class MessageCreatorTestUtils {
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
                 .timeInForce(timeInForceEnum)
-                .orderType(OrderTypeEnum.LIMIT)
-                .addOperationType(OrderAddOperationTypeEnum.NEW_ORDER)
-                .orderType(orderTypeEnum)
+                .orderOperationCause(NEW_ORDER)
+                .orderOperation(INSERT)
                 .build();
     }
 
@@ -110,7 +128,7 @@ public class MessageCreatorTestUtils {
                                       double volume,
                                       OrderSideEnum orderSideEnum,
                                       String orderId) {
-        return ImmutableDefaultAddOrder.builder()
+        return ImmutableDefaultLimitOrder.builder()
                 .participant(new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString())))
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -120,9 +138,9 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .timeInForce(FILL)
-                .orderType(OrderTypeEnum.LIMIT)
-                .addOperationType(OrderAddOperationTypeEnum.NEW_ORDER)
+                .timeInForce(SESSION)
+                .orderOperationCause(NEW_ORDER)
+                .orderOperation(INSERT)
                 .build();
     }
 
