@@ -25,7 +25,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.MessageCreatorTestUtils.*;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.MessageCreatorTestUtils.buildOrderAdd;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.MessageCreatorTestUtils.buildOrderUpdate;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 

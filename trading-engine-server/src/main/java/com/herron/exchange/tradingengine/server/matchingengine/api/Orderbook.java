@@ -7,7 +7,17 @@ import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.common.api.common.messages.common.Volume;
 
+import java.util.Optional;
+
 public interface Orderbook {
+
+    Order getAskOrderIfPriceDoesNotMatch(Price preMatchAskPrice);
+
+    Order getBidOrderIfPriceDoesNotMatch(Price preMatchBidPrice);
+
+    Optional<Order> getBestBidOrder();
+
+    Optional<Order> getBestAskOrder();
 
     TradeExecution runAuctionAlgorithm();
 

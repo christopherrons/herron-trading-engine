@@ -2,6 +2,7 @@ package com.herron.exchange.tradingengine.server.consumers;
 
 import com.herron.exchange.common.api.common.api.MessageFactory;
 import com.herron.exchange.common.api.common.api.broadcasts.BroadcastMessage;
+import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.DataConsumer;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
@@ -16,8 +17,8 @@ import org.springframework.kafka.annotation.TopicPartition;
 
 public class OrderDataConsumer extends DataConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderDataConsumer.class);
-    private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.ORDER_DATA, 0);
-    private static final PartitionKey PARTITION_ONE_KEY = new PartitionKey(KafkaTopicEnum.ORDER_DATA, 1);
+    private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0);
+    private static final PartitionKey PARTITION_ONE_KEY = new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 1);
     private final TradingEngine tradingEngine;
 
     public OrderDataConsumer(TradingEngine tradingEngine, MessageFactory messageFactory) {
@@ -28,7 +29,7 @@ public class OrderDataConsumer extends DataConsumer {
     @KafkaListener(
             id = "order-data-consumer-one",
             topicPartitions = {
-                    @TopicPartition(topic = "order-data", partitionOffsets = @PartitionOffset(partition = "0", initialOffset = "0"))
+                    @TopicPartition(topic = "user-order-data", partitionOffsets = @PartitionOffset(partition = "0", initialOffset = "0"))
             }
     )
     public void consumeOrderDataPartitionOne(ConsumerRecord<String, String> consumerRecord) {
@@ -39,7 +40,7 @@ public class OrderDataConsumer extends DataConsumer {
     @KafkaListener(
             id = "order-data-consumer-two",
             topicPartitions = {
-                    @TopicPartition(topic = "order-data", partitionOffsets = @PartitionOffset(partition = "1", initialOffset = "0"))
+                    @TopicPartition(topic = "user-order-data", partitionOffsets = @PartitionOffset(partition = "1", initialOffset = "0"))
             }
     )
     public void consumeOrderDataPartitionTwo(ConsumerRecord<String, String> consumerRecord) {
@@ -52,7 +53,11 @@ public class OrderDataConsumer extends DataConsumer {
             return;
         }
         try {
-            tradingEngine.queueMessage(broadcastMessage);
+            if (broadcastMessage.message() instanceof Order order) {
+                tradingEngine.queueOrder(order);
+            } else {
+                LOGGER.warn("Unexpected message type {}.", broadcastMessage);
+            }
         } catch (Exception e) {
             LOGGER.warn("Unhandled exception for message {}.", broadcastMessage, e);
         }

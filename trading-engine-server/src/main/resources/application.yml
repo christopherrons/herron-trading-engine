@@ -6,3 +6,7 @@ kafka:
   topic:
     audit-trail:
       nr-of-partitions: 1
+    trade-data:
+      nr-of-partitions: 1
+    top-of-book:
+      nr-of-partitions: 1

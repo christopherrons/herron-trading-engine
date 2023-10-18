@@ -458,8 +458,8 @@ class FifoOrderbookTest {
         orderbook.updateOrderbook(buildOrderAdd(908, 32.20, 2, OrderSideEnum.ASK, "16"));
         orderbook.updateOrderbook(buildOrderAdd(912, 32.20, 1, OrderSideEnum.ASK, "17"));
 
-        orderbook.updateState(StateChangeTypeEnum.AUCTION_TRADING);
-        orderbook.updateState(StateChangeTypeEnum.AUCTION_RUN);
+        orderbook.updateState(StateChangeTypeEnum.CLOSING_AUCTION_TRADING);
+        orderbook.updateState(StateChangeTypeEnum.CLOSING_AUCTION_RUN);
         TradeExecution tradeExecution = orderbook.runAuctionAlgorithm();
         List<Trade> trades = tradeExecution.messages().stream().filter(Trade.class::isInstance).map(Trade.class::cast).toList();
         assertEquals(4, trades.size());

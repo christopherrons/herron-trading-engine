@@ -1,16 +1,15 @@
 package com.herron.exchange.tradingengine.server.matchingengine;
 
-import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
 import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.api.trading.statechange.StateChange;
 import com.herron.exchange.common.api.common.api.trading.trades.Trade;
 import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
-import com.herron.exchange.common.api.common.enums.StateChangeTypeEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.common.api.common.wrappers.ThreadWrapper;
+import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.OrderbookCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,12 +20,14 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.herron.exchange.common.api.common.enums.StateChangeTypeEnum.*;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 public class MatchingEngine {
     private static final PartitionKey AUDIT_TRAIL_KEY = new PartitionKey(KafkaTopicEnum.AUDIT_TRAIL, 0);
     private static final PartitionKey TRADE_DATA_KEY = new PartitionKey(KafkaTopicEnum.TRADE_DATA, 0);
-    private final Logger logger = LoggerFactory.getLogger(MatchingEngine.class);
+    private static final PartitionKey TOP_OF_BOOK_DATA_KEY = new PartitionKey(KafkaTopicEnum.TOP_OF_BOOK_ORDER_DATA, 0);
+    private static final Logger LOGGER = LoggerFactory.getLogger(MatchingEngine.class);
     private final BlockingQueue<OrderbookEvent> eventQueue = new PriorityBlockingQueue<>();
     private final OrderbookCache orderbookCache = new OrderbookCache();
     private final Thread pollThread;
@@ -34,41 +35,39 @@ public class MatchingEngine {
     private final AtomicBoolean isMatching = new AtomicBoolean(false);
     private final KafkaBroadcastHandler broadcastHandler;
 
-    public MatchingEngine(PartitionKey partitionKey, KafkaBroadcastHandler broadcastHandler) {
+    public MatchingEngine(String id, KafkaBroadcastHandler broadcastHandler) {
         this.broadcastHandler = broadcastHandler;
-        pollThread = new Thread(this::runMatching, partitionKey.toString());
-        queueLoggerThread = newScheduledThreadPool(1, new ThreadWrapper(partitionKey.toString()));
+        pollThread = new Thread(this::runMatching, id);
+        queueLoggerThread = newScheduledThreadPool(1, new ThreadWrapper(id));
     }
 
     public void init() {
-        logger.info("Starting matching engine.");
         isMatching.set(true);
         pollThread.start();
-        queueLoggerThread.scheduleAtFixedRate(() -> logger.info("Message Queue size: {}", eventQueue.size()), 0, 60, TimeUnit.SECONDS);
+        queueLoggerThread.scheduleAtFixedRate(() -> LOGGER.info("Message Queue size: {}", eventQueue.size()), 0, 30, TimeUnit.SECONDS);
     }
 
     public void stop() {
-        logger.info("Stopping matching engine.");
+        LOGGER.info("Stopping matching engine.");
         isMatching.set(false);
         queueLoggerThread.shutdown();
     }
 
-    public void queueMessage(Message message) {
-        if (message instanceof OrderbookEvent orderbookEvent) {
-            var orderbook = orderbookCache.getOrCreateOrderbook(orderbookEvent.orderbookId());
-            if (orderbook == null) {
-                logger.error("Orderbook {} does not exist, queue orderbook event {}.", orderbookEvent.orderbookId(), orderbookEvent);
-            }
-            eventQueue.add(orderbookEvent);
+    public void queueMessage(OrderbookEvent orderbookEvent) {
+        var orderbook = orderbookCache.getOrCreateOrderbook(orderbookEvent.orderbookId());
+        if (orderbook == null) {
+            LOGGER.error("Orderbook {} does not exist, queue orderbook event {}.", orderbookEvent.orderbookId(), orderbookEvent);
+            return;
         }
+        eventQueue.add(orderbookEvent);
     }
 
     private void runMatching() {
+        LOGGER.info("Starting matching engine.");
         OrderbookEvent orderbookEvent;
         while (isMatching.get() || !eventQueue.isEmpty()) {
 
             orderbookEvent = poll();
-
             if (orderbookEvent == null) {
                 continue;
             }
@@ -76,7 +75,7 @@ public class MatchingEngine {
             try {
                 updateOrderbook(orderbookEvent);
             } catch (Exception e) {
-                logger.warn("Unhandled exception for orderbookEvent: {}", orderbookEvent, e);
+                LOGGER.warn("Unhandled exception for orderbookEvent: {}", orderbookEvent, e);
             }
         }
     }
@@ -101,38 +100,73 @@ public class MatchingEngine {
     private void runMatchingAlgorithm(Order order) {
         var orderbook = orderbookCache.getOrCreateOrderbook(order.orderbookId());
         if (orderbook == null) {
-            logger.error("Order {} can not be added, orderbook {} does not exist.", order, order.orderbookId());
+            LOGGER.error("Order {} can not be added, orderbook {} does not exist.", order, order.orderbookId());
             return;
         }
+
+        var preMatchAskPrice = orderbook.getBestAskPrice();
+        var preMatchBidPrice = orderbook.getBestBidPrice();
 
         if (orderbook.updateOrderbook(order)) {
             broadcast(AUDIT_TRAIL_KEY, order);
             var tradeExecution = orderbook.runMatchingAlgorithm(order);
             broadcast(tradeExecution);
+
+            var postMatchBestAskOrder = orderbook.getAskOrderIfPriceDoesNotMatch(preMatchAskPrice);
+            var postMatchBestBidOrder = orderbook.getBidOrderIfPriceDoesNotMatch(preMatchBidPrice);
+            broadcastTopOfBook(postMatchBestAskOrder);
+            broadcastTopOfBook(postMatchBestBidOrder);
         }
+
     }
 
     private void updateState(StateChange stateChange) {
         var orderbook = orderbookCache.getOrCreateOrderbook(stateChange.orderbookId());
         if (orderbook == null) {
             String errorMessage = String.format("Cannot update orderbook %s state to %s does not exist.", stateChange.orderbookId(), stateChange.stateChangeType());
-            logger.error(errorMessage);
+            LOGGER.error(errorMessage);
             return;
         }
 
-        if (orderbook.updateState(stateChange.stateChangeType()) && stateChange.stateChangeType() == StateChangeTypeEnum.AUCTION_RUN) {
+        if (orderbook.updateState(stateChange.stateChangeType())) {
             broadcast(AUDIT_TRAIL_KEY, stateChange);
-            var tradeExecution = orderbook.runAuctionAlgorithm();
-            broadcast(tradeExecution);
+
+            if (stateChange.stateChangeType() == OPEN_AUCTION_RUN) {
+                runAuction(orderbook);
+                orderbook.updateState(CONTINUOUS_TRADING);
+
+            } else if (stateChange.stateChangeType() == CLOSING_AUCTION_RUN) {
+                runAuction(orderbook);
+                orderbook.updateState(POST_TRADE);
+            }
         }
     }
 
-    private void broadcast(TradeExecution tradeExecution) {
-        if (tradeExecution == null) {
+    private void runAuction(Orderbook orderbook) {
+        var preMatchAskPrice = orderbook.getBestAskPrice();
+        var preMatchBidPrice = orderbook.getBestBidPrice();
+
+        var tradeExecution = orderbook.runAuctionAlgorithm();
+        broadcast(tradeExecution);
+
+        var postMatchBestAskOrder = orderbook.getAskOrderIfPriceDoesNotMatch(preMatchAskPrice);
+        var postMatchBestBidOrder = orderbook.getBidOrderIfPriceDoesNotMatch(preMatchBidPrice);
+        broadcastTopOfBook(postMatchBestAskOrder);
+        broadcastTopOfBook(postMatchBestBidOrder);
+    }
+
+    private void broadcastTopOfBook(Order order) {
+        if (order == null) {
             return;
         }
-        broadcast(AUDIT_TRAIL_KEY, tradeExecution);
-        tradeExecution.messages().stream().filter(Trade.class::isInstance).forEach(t -> broadcast(TRADE_DATA_KEY, t));
+        broadcast(TOP_OF_BOOK_DATA_KEY, order);
+    }
+
+    private void broadcast(TradeExecution tradeExecution) {
+        if (tradeExecution != null) {
+            broadcast(AUDIT_TRAIL_KEY, tradeExecution);
+            tradeExecution.messages().stream().filter(Trade.class::isInstance).forEach(t -> broadcast(TRADE_DATA_KEY, t));
+        }
     }
 
     private void broadcast(PartitionKey partitionKey, OrderbookEvent orderbookEvent) {

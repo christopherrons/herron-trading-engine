@@ -19,6 +19,9 @@ import org.slf4j.LoggerFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
+import static com.herron.exchange.common.api.common.enums.StateChangeTypeEnum.*;
 
 public class OrderbookImpl implements Orderbook {
     private static final Logger LOGGER = LoggerFactory.getLogger(OrderbookImpl.class);
@@ -26,7 +29,7 @@ public class OrderbookImpl implements Orderbook {
     private final ActiveOrders activeOrders;
     private final MatchingAlgorithm matchingAlgorithm;
     private final AuctionAlgorithm auctionAlgorithm;
-    private StateChangeTypeEnum currentState = StateChangeTypeEnum.CLOSED;
+    private StateChangeTypeEnum currentState = CLOSED;
 
     public OrderbookImpl(OrderbookData orderbookData,
                          ActiveOrders activeOrders,
@@ -59,14 +62,15 @@ public class OrderbookImpl implements Orderbook {
 
     @Override
     public boolean isAccepting() {
+        //FIXME: Add acceptable operations based on the current state.
         if (currentState == null) {
             return false;
         }
-        if (currentState == StateChangeTypeEnum.TRADE_STOP) {
+        if (currentState == TRADE_STOP) {
             return false;
         }
 
-        if (currentState == StateChangeTypeEnum.CLOSED) {
+        if (currentState == CLOSED) {
             return false;
         }
         return true;
@@ -194,13 +198,27 @@ public class OrderbookImpl implements Orderbook {
     }
 
     @Override
+    public Optional<Order> getBestBidOrder() {
+        return activeOrders.getBestBidOrder();
+    }
+
+    @Override
+    public Optional<Order> getBestAskOrder() {
+        return activeOrders.getBestAskOrder();
+    }
+
+    @Override
     public boolean updateState(StateChangeTypeEnum toState) {
+        if (toState == currentState) {
+            return true;
+        }
+
         if (currentState == null || currentState.isValidStateChange(toState)) {
-            LOGGER.info("Successfully updated orderbook {} from state {} to state {}", getOrderbookId(), currentState, toState);
+            LOGGER.info("Successfully updated orderbook {} from state {} to state {}.", getOrderbookId(), currentState, toState);
             currentState = toState;
             return true;
         }
-        LOGGER.error("Could not updated orderbook {} from state {} to state {}", getOrderbookId(), currentState, toState);
+        LOGGER.error("Could not updated orderbook {} from state {} to state {}.", getOrderbookId(), currentState, toState);
         return false;
     }
 
@@ -211,7 +229,7 @@ public class OrderbookImpl implements Orderbook {
 
     @Override
     public TradeExecution runMatchingAlgorithm(final Order incomingOrder) {
-        if (incomingOrder.currentVolume().leq(0) || currentState != StateChangeTypeEnum.CONTINUOUS_TRADING) {
+        if (incomingOrder.currentVolume().leq(0) || currentState != CONTINUOUS_TRADING) {
             return null;
         }
 
@@ -240,7 +258,8 @@ public class OrderbookImpl implements Orderbook {
 
     @Override
     public TradeExecution runAuctionAlgorithm() {
-        if (currentState != StateChangeTypeEnum.AUCTION_RUN) {
+        if (currentState != OPEN_AUCTION_RUN && currentState != CLOSING_AUCTION_RUN) {
+            LOGGER.error("Attemped auction run triggered in {} event to current state {}. Required state is {}/{} ", getOrderbookId(), currentState, OPEN_AUCTION_RUN, CLOSING_AUCTION_RUN);
             return null;
         }
 
@@ -262,5 +281,22 @@ public class OrderbookImpl implements Orderbook {
                 .messages(events)
                 .orderbookId(getOrderbookId())
                 .build();
+    }
+
+    @Override
+    public Order getAskOrderIfPriceDoesNotMatch(Price preMatchAskPrice) {
+        return getPreMatchBestOrder(preMatchAskPrice, getBestAskOrder());
+    }
+
+    @Override
+    public Order getBidOrderIfPriceDoesNotMatch(Price preMatchBidPrice) {
+        return getPreMatchBestOrder(preMatchBidPrice, getBestBidOrder());
+    }
+
+    private Order getPreMatchBestOrder(Price preMatchPrice, Optional<Order> postMatchBestOrder) {
+        if (postMatchBestOrder.isPresent() && !postMatchBestOrder.get().price().equals(preMatchPrice)) {
+            return postMatchBestOrder.get();
+        }
+        return null;
     }
 }
