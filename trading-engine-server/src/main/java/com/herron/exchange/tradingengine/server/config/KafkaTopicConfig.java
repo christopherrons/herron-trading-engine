@@ -38,7 +38,7 @@ public class KafkaTopicConfig {
     @Bean
     public NewTopic topOfOrderBookDataTopic() {
         return TopicBuilder
-                .name(KafkaTopicEnum.TOP_OF_BOOK_ORDER_DATA.getTopicName())
+                .name(KafkaTopicEnum.TOP_OF_BOOK_QUOTE.getTopicName())
                 .partitions(nrOfPartitionsTopOfBook)
                 .build();
     }

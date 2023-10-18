@@ -8,12 +8,14 @@ import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultPriceQuote;
 import com.herron.exchange.common.api.common.wrappers.ThreadWrapper;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.OrderbookCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Instant;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
@@ -26,7 +28,7 @@ import static java.util.concurrent.Executors.newScheduledThreadPool;
 public class MatchingEngine {
     private static final PartitionKey AUDIT_TRAIL_KEY = new PartitionKey(KafkaTopicEnum.AUDIT_TRAIL, 0);
     private static final PartitionKey TRADE_DATA_KEY = new PartitionKey(KafkaTopicEnum.TRADE_DATA, 0);
-    private static final PartitionKey TOP_OF_BOOK_DATA_KEY = new PartitionKey(KafkaTopicEnum.TOP_OF_BOOK_ORDER_DATA, 0);
+    private static final PartitionKey TOP_OF_BOOK_DATA_KEY = new PartitionKey(KafkaTopicEnum.TOP_OF_BOOK_QUOTE, 0);
     private static final Logger LOGGER = LoggerFactory.getLogger(MatchingEngine.class);
     private final BlockingQueue<OrderbookEvent> eventQueue = new PriorityBlockingQueue<>();
     private final OrderbookCache orderbookCache = new OrderbookCache();
@@ -158,7 +160,15 @@ public class MatchingEngine {
         if (order == null) {
             return;
         }
-        broadcast(TOP_OF_BOOK_DATA_KEY, order);
+        broadcast(
+                TOP_OF_BOOK_DATA_KEY,
+                ImmutableDefaultPriceQuote.builder()
+                        .orderbookId(order.orderbookId())
+                        .timeOfEventMs(Instant.now().toEpochMilli())
+                        .side(order.orderSide())
+                        .price(order.price())
+                        .build()
+        );
     }
 
     private void broadcast(TradeExecution tradeExecution) {
