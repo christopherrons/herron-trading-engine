@@ -5,6 +5,7 @@ import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.api.trading.statechange.StateChange;
 import com.herron.exchange.common.api.common.api.trading.trades.Trade;
 import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
+import com.herron.exchange.common.api.common.comparator.EventComparator;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
@@ -30,7 +31,7 @@ public class MatchingEngine {
     private static final PartitionKey TRADE_DATA_KEY = new PartitionKey(KafkaTopicEnum.TRADE_DATA, 0);
     private static final PartitionKey TOP_OF_BOOK_DATA_KEY = new PartitionKey(KafkaTopicEnum.TOP_OF_BOOK_QUOTE, 0);
     private static final Logger LOGGER = LoggerFactory.getLogger(MatchingEngine.class);
-    private final BlockingQueue<OrderbookEvent> eventQueue = new PriorityBlockingQueue<>();
+    private final BlockingQueue<OrderbookEvent> eventQueue = new PriorityBlockingQueue<>(50, new EventComparator<>());
     private final OrderbookCache orderbookCache = new OrderbookCache();
     private final Thread pollThread;
     private final ScheduledExecutorService queueLoggerThread;
@@ -67,6 +68,7 @@ public class MatchingEngine {
     private void runMatching() {
         LOGGER.info("Starting matching engine.");
         OrderbookEvent orderbookEvent;
+        boolean t = true;
         while (isMatching.get() || !eventQueue.isEmpty()) {
 
             orderbookEvent = poll();

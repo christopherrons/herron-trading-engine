@@ -1,10 +1,12 @@
 package com.herron.exchange.tradingengine.server.config;
 
 import com.herron.exchange.common.api.common.api.MessageFactory;
+import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.mapping.DefaultMessageFactory;
+import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
-import com.herron.exchange.tradingengine.server.consumers.OrderDataConsumer;
+import com.herron.exchange.tradingengine.server.consumers.UserOrderDataConsumer;
 import com.herron.exchange.tradingengine.server.consumers.ReferenceDataConsumer;
 import com.herron.exchange.tradingengine.server.matchingengine.StateChangeOrchestrator;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaTemplate;
 
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 @Configuration
@@ -30,9 +33,13 @@ public class TradingEngineConfig {
     }
 
     @Bean
-    public OrderDataConsumer orderDataConsumer(TradingEngine tradingEngine,
-                                               MessageFactory messageFactory) {
-        return new OrderDataConsumer(tradingEngine, messageFactory);
+    public UserOrderDataConsumer orderDataConsumer(TradingEngine tradingEngine,
+                                                   MessageFactory messageFactory) {
+        return new UserOrderDataConsumer(
+                tradingEngine,
+                messageFactory,
+                Map.of(new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0), 50000)
+                );
     }
 
     @Bean
@@ -47,7 +54,7 @@ public class TradingEngineConfig {
 
     @Bean
     public ReferenceDataConsumer referenceDataConsumer(MessageFactory messageFactory,
-                                                       @Qualifier("stateChangeInitializedLatch") CountDownLatch referenceDataLoadLatch) {
+                                                       @Qualifier("referenceDataLoadLatch") CountDownLatch referenceDataLoadLatch) {
         return new ReferenceDataConsumer(referenceDataLoadLatch, messageFactory);
     }
 

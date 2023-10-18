@@ -2,9 +2,11 @@ package com.herron.exchange.tradingengine.server.consumers;
 
 import com.herron.exchange.common.api.common.api.MessageFactory;
 import com.herron.exchange.common.api.common.api.broadcasts.BroadcastMessage;
+import com.herron.exchange.common.api.common.api.broadcasts.DataStreamState;
 import com.herron.exchange.common.api.common.api.trading.orders.Order;
+import com.herron.exchange.common.api.common.enums.DataStreamEnum;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
-import com.herron.exchange.common.api.common.kafka.DataConsumer;
+import com.herron.exchange.common.api.common.kafka.KafkaDataConsumer;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -14,20 +16,24 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.PartitionOffset;
 import org.springframework.kafka.annotation.TopicPartition;
 
+import java.util.Map;
 
-public class OrderDataConsumer extends DataConsumer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(OrderDataConsumer.class);
+
+public class UserOrderDataConsumer extends KafkaDataConsumer {
+    private static final Logger LOGGER = LoggerFactory.getLogger(UserOrderDataConsumer.class);
     private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0);
     private static final PartitionKey PARTITION_ONE_KEY = new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 1);
     private final TradingEngine tradingEngine;
 
-    public OrderDataConsumer(TradingEngine tradingEngine, MessageFactory messageFactory) {
-        super(messageFactory);
+    public UserOrderDataConsumer(TradingEngine tradingEngine,
+                                 MessageFactory messageFactory,
+                                 Map<PartitionKey, Integer> keyToMessageUpdateInterval) {
+        super(messageFactory, keyToMessageUpdateInterval);
         this.tradingEngine = tradingEngine;
     }
 
     @KafkaListener(
-            id = "order-data-consumer-one",
+            id = "trading-engine-user-order-data-0",
             topicPartitions = {
                     @TopicPartition(topic = "user-order-data", partitionOffsets = @PartitionOffset(partition = "0", initialOffset = "0"))
             }
@@ -55,6 +61,13 @@ public class OrderDataConsumer extends DataConsumer {
         try {
             if (broadcastMessage.message() instanceof Order order) {
                 tradingEngine.queueOrder(order);
+            } else if (broadcastMessage.message() instanceof DataStreamState state) {
+                if (state.state() == DataStreamEnum.DONE) {
+                    LOGGER.info("Done consuming order stream");
+                } else {
+                    LOGGER.info("Started consuming order stream");
+                }
+
             } else {
                 LOGGER.warn("Unexpected message type {}.", broadcastMessage);
             }

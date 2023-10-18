@@ -38,6 +38,9 @@ public class DutchAuctionAlgorithm implements AuctionAlgorithm {
         bidPriceLevels.forEach(pl -> possibleEquilibriumPrice.add(pl.getPrice()));
         askPriceLevels.forEach(pl -> possibleEquilibriumPrice.add(pl.getPrice()));
 
+        if (possibleEquilibriumPrice.isEmpty()) {
+            return null;
+        }
         EquilibriumPriceResult.VolumeMatchAtPriceItem maxVolumeMatchAtPrice = new EquilibriumPriceResult.VolumeMatchAtPriceItem(Price.ZERO, Volume.ZERO, Volume.ZERO);
         List<EquilibriumPriceResult.VolumeMatchAtPriceItem> volumeMatchAtPriceItems = new ArrayList<>();
         for (var eqPrice : possibleEquilibriumPrice) {

@@ -9,7 +9,7 @@ import com.herron.exchange.common.api.common.api.referencedata.instruments.Instr
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
 import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
-import com.herron.exchange.common.api.common.kafka.DataConsumer;
+import com.herron.exchange.common.api.common.kafka.KafkaDataConsumer;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import org.springframework.kafka.annotation.TopicPartition;
 import java.util.concurrent.CountDownLatch;
 
 
-public class ReferenceDataConsumer extends DataConsumer {
+public class ReferenceDataConsumer extends KafkaDataConsumer {
     private static final Logger LOGGER = LoggerFactory.getLogger(ReferenceDataConsumer.class);
     private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.REFERENCE_DATA, 0);
     private final CountDownLatch countDownLatch;
@@ -31,7 +31,7 @@ public class ReferenceDataConsumer extends DataConsumer {
         this.countDownLatch = countDownLatch;
     }
 
-    @KafkaListener(id = "reference-data-consumer-0",
+    @KafkaListener(id = "trading-engine-reference-data-consumer-0",
             topicPartitions = {
                     @TopicPartition(topic = "reference-data", partitionOffsets = @PartitionOffset(partition = "0", initialOffset = "0"))
             }

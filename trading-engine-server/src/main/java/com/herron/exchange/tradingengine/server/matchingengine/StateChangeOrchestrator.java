@@ -25,8 +25,9 @@ public class StateChangeOrchestrator {
     private final TradingEngine tradingEngine;
     private final CountDownLatch referenceDataLoadLatch;
     private final CountDownLatch stateChangeInitializedLatch;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     private final Thread initThread;
+    private long eventsAtSameMilli = 0;
 
     public StateChangeOrchestrator(TradingEngine tradingEngine,
                                    CountDownLatch referenceDataLoadLatch,
@@ -34,18 +35,18 @@ public class StateChangeOrchestrator {
         this.tradingEngine = tradingEngine;
         this.referenceDataLoadLatch = referenceDataLoadLatch;
         this.stateChangeInitializedLatch = stateChangeInitializedLatch;
-        this.initThread = new Thread(this::scheduleStateChanges, "State Change Orchestrator");
+        this.initThread = new Thread(this::scheduleStateChanges, this.getClass().getSimpleName());
     }
 
     public void init() {
         initThread.start();
     }
 
-    public void scheduleStateChanges() {
+    private void scheduleStateChanges() {
         try {
             referenceDataLoadLatch.await();
         } catch (InterruptedException ignore) {
-
+            //Ignore
         }
 
         for (var orderbookData : ReferenceDataCache.getCache().getOrderbookData()) {
@@ -53,8 +54,8 @@ public class StateChangeOrchestrator {
             scheduleOpenAuctionTrading(orderbookData);
             scheduleOpenAuctionRun(orderbookData);
             scheduleContinuous(orderbookData);
-            scheduleCloseAuctionTrading(orderbookData);
-            scheduleCloseAuctionRun(orderbookData);
+            //scheduleCloseAuctionTrading(orderbookData);
+            //scheduleCloseAuctionRun(orderbookData);
         }
 
         var count = stateChangeInitializedLatch.getCount();
@@ -127,6 +128,12 @@ public class StateChangeOrchestrator {
     private void scheduleCloseAuctionRun(OrderbookData orderbookData) {
         var tradingHours = orderbookData.tradingCalendar().closeAuctionTradingHours();
         if (tradingHours == null) {
+            var triggerTime = orderbookData.tradingCalendar().continuousTradingHours().end();
+            scheduleStateChange(
+                    calculateInitialDelay(triggerTime),
+                    orderbookData.orderbookId(),
+                    POST_TRADE
+            );
             return;
         }
         var triggerTime = orderbookData.tradingCalendar().closeAuctionTradingHours().end();
@@ -148,6 +155,12 @@ public class StateChangeOrchestrator {
     }
 
     private void scheduleStateChange(long initialDelay, String orderbookId, TradingStatesEnum tradingState) {
+        if (initialDelay == 0) {
+            var stateChange = createStateChange(orderbookId, tradingState);
+            tradingEngine.queueStateChange(stateChange);
+            eventsAtSameMilli++;
+            return;
+        }
         scheduler.schedule(() -> {
             var stateChange = createStateChange(orderbookId, tradingState);
             tradingEngine.queueStateChange(stateChange);
@@ -155,8 +168,13 @@ public class StateChangeOrchestrator {
     }
 
     private StateChange createStateChange(String orderbookId, TradingStatesEnum tradingState) {
+        Instant now = Instant.now();
+        long epochMilli = now.toEpochMilli();
+        int nano = now.getNano();
+
+        long combinedTimestamp = epochMilli + (nano / 1_000_000);
         return ImmutableDefaultStateChange.builder()
-                .timeOfEventMs(Instant.now().toEpochMilli())
+                .timeOfEventMs(combinedTimestamp + eventsAtSameMilli)
                 .tradeState(tradingState)
                 .orderbookId(orderbookId)
                 .build();

@@ -265,6 +265,9 @@ public class OrderbookImpl implements Orderbook {
         }
 
         var equilibriumPrice = auctionAlgorithm.calculateEquilibriumPrice();
+        if (equilibriumPrice == null) {
+            return null;
+        }
         final List<OrderbookEvent> events = new ArrayList<>();
         List<OrderbookEvent> matchingEvents;
         do {
