@@ -90,14 +90,14 @@ public class MatchingEngine {
 
     private void updateOrderbook(OrderbookEvent orderbookEvent) {
         if (orderbookEvent instanceof StateChange stateChange) {
-            updateState(stateChange);
+            updateOrderbook(stateChange);
 
         } else if (orderbookEvent instanceof Order order) {
-            runMatchingAlgorithm(order);
+            updateOrderbook(order);
         }
     }
 
-    private void runMatchingAlgorithm(Order order) {
+    private void updateOrderbook(Order order) {
         var orderbook = orderbookCache.getOrCreateOrderbook(order.orderbookId());
         if (orderbook == null) {
             LOGGER.error("Order {} can not be added, orderbook {} does not exist.", order, order.orderbookId());
@@ -120,11 +120,10 @@ public class MatchingEngine {
 
     }
 
-    private void updateState(StateChange stateChange) {
+    private void updateOrderbook(StateChange stateChange) {
         var orderbook = orderbookCache.getOrCreateOrderbook(stateChange.orderbookId());
         if (orderbook == null) {
-            String errorMessage = String.format("Cannot update orderbook %s state to %s does not exist.", stateChange.orderbookId(), stateChange.stateChangeType());
-            LOGGER.error(errorMessage);
+            LOGGER.error("Cannot update orderbook {} state to {} does not exist.", stateChange.orderbookId(), stateChange.stateChangeType());
             return;
         }
 

@@ -12,6 +12,8 @@ import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultUp
 
 import java.time.Instant;
 
+import static com.herron.exchange.common.api.common.enums.TimeInForceEnum.FILL;
+
 public class MessageCreatorTestUtils {
     private static final Participant PARTICIPANT = new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString()));
 
@@ -30,7 +32,7 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .orderExecutionType(OrderExecutionTypeEnum.FILL)
+                .timeInForce(FILL)
                 .orderType(OrderTypeEnum.LIMIT)
                 .updateOperationType(OrderUpdatedOperationTypeEnum.EXTERNAL_UPDATE)
                 .build();
@@ -51,7 +53,7 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .orderExecutionType(OrderExecutionTypeEnum.FILL)
+                .timeInForce(FILL)
                 .orderType(OrderTypeEnum.LIMIT)
                 .cancelOperationType(OrderCancelOperationTypeEnum.FILLED)
                 .build();
@@ -73,7 +75,7 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .orderExecutionType(OrderExecutionTypeEnum.FILL)
+                .timeInForce(FILL)
                 .orderType(OrderTypeEnum.LIMIT)
                 .addOperationType(OrderAddOperationTypeEnum.NEW_ORDER)
                 .build();
@@ -84,7 +86,7 @@ public class MessageCreatorTestUtils {
                                       double volume,
                                       OrderSideEnum orderSideEnum,
                                       String orderId,
-                                      OrderExecutionTypeEnum orderExecutionTypeEnum,
+                                      TimeInForceEnum timeInForceEnum,
                                       OrderTypeEnum orderTypeEnum) {
         return ImmutableDefaultAddOrder.builder()
                 .participant(new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString())))
@@ -96,7 +98,7 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .orderExecutionType(orderExecutionTypeEnum)
+                .timeInForce(timeInForceEnum)
                 .orderType(OrderTypeEnum.LIMIT)
                 .addOperationType(OrderAddOperationTypeEnum.NEW_ORDER)
                 .orderType(orderTypeEnum)
@@ -118,7 +120,7 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(timeStampInMs)
                 .instrumentId("inststrumenId")
                 .orderbookId("orderbookId")
-                .orderExecutionType(OrderExecutionTypeEnum.FILL)
+                .timeInForce(FILL)
                 .orderType(OrderTypeEnum.LIMIT)
                 .addOperationType(OrderAddOperationTypeEnum.NEW_ORDER)
                 .build();

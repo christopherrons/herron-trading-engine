@@ -49,7 +49,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
     }
 
     private List<OrderbookEvent> matchNonActiveOrders(Order nonActiveOrder) {
-        return switch (nonActiveOrder.orderExecutionType()) {
+        return switch (nonActiveOrder.timeInForce()) {
             case FOK -> matchFillOrKill(nonActiveOrder);
             case FAK -> matchFillAndKill(nonActiveOrder);
             default -> matchMarketOrder(nonActiveOrder);
