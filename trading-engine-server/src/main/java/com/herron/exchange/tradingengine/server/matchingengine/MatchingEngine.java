@@ -48,7 +48,7 @@ public class MatchingEngine {
     public void init() {
         isMatching.set(true);
         pollThread.start();
-        queueLoggerThread.scheduleAtFixedRate(() -> LOGGER.info("Message Queue size: {}", eventQueue.size()), 0, 30, TimeUnit.SECONDS);
+        queueLoggerThread.scheduleAtFixedRate(() -> LOGGER.info("Message Queue size: {}", eventQueue.size()), 0, 60, TimeUnit.SECONDS);
     }
 
     public void stop() {
@@ -139,12 +139,10 @@ public class MatchingEngine {
         if (orderbook.updateState(stateChange.tradeState())) {
             broadcast(AUDIT_TRAIL_KEY, stateChange);
 
-            if (stateChange.tradeState() == OPEN_AUCTION_RUN) {
-                runAuction(orderbook);
-
-            } else if (stateChange.tradeState() == CLOSING_AUCTION_RUN) {
+            if (stateChange.tradeState() == OPEN_AUCTION_RUN || stateChange.tradeState() == CLOSING_AUCTION_RUN) {
                 runAuction(orderbook);
             }
+
         } else {
             LOGGER.error("Could not update orderbook {}", stateChange);
         }

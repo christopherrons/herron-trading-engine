@@ -192,7 +192,6 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return switch (order.orderSide()) {
             case BID -> isTotalBidFillPossible(order);
             case ASK -> isTotalAskFillPossible(order);
-            default -> false;
         };
     }
 

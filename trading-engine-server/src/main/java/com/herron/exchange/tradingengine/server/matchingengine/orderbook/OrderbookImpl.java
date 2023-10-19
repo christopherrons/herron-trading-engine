@@ -45,6 +45,7 @@ public class OrderbookImpl implements Orderbook {
     @Override
     public synchronized boolean updateOrderbook(Order order) {
         if (!isAccepting()) {
+            LOGGER.error("Is not accepting {}.",currentState);
             return false;
         }
         if (order.isActiveOrder()) {
@@ -52,10 +53,6 @@ public class OrderbookImpl implements Orderbook {
                 case INSERT -> addOrder(order);
                 case UPDATE -> updateOrder(order);
                 case CANCEL -> removeOrder(order);
-                default -> {
-                    LOGGER.error("Invalid order operation for {}.", order);
-                    yield false;
-                }
             };
         }
         return true;

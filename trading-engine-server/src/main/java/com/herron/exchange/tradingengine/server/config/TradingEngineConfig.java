@@ -38,7 +38,7 @@ public class TradingEngineConfig {
         return new UserOrderDataConsumer(
                 tradingEngine,
                 messageFactory,
-                Map.of(new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0), 1000000)
+                Map.of(new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0), 2000000)
         );
     }
 
@@ -63,9 +63,9 @@ public class TradingEngineConfig {
         return new KafkaBroadcastHandler(
                 kafkaTemplate,
                 Map.of(
-                        new PartitionKey(KafkaTopicEnum.AUDIT_TRAIL, 0), 1000000,
-                        new PartitionKey(KafkaTopicEnum.TRADE_DATA, 0), 10000,
-                        new PartitionKey(KafkaTopicEnum.TOP_OF_BOOK_QUOTE, 0), 10000
+                        new PartitionKey(KafkaTopicEnum.AUDIT_TRAIL, 0), 2000000,
+                        new PartitionKey(KafkaTopicEnum.TRADE_DATA, 0), 50000,
+                        new PartitionKey(KafkaTopicEnum.TOP_OF_BOOK_QUOTE, 0), 75000
                 )
         );
     }

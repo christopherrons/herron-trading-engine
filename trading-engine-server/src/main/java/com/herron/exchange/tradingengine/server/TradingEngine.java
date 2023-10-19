@@ -34,8 +34,8 @@ public class TradingEngine {
     }
 
     private void queueMessage(OrderbookEvent orderbookEvent) {
-        var marketId = ReferenceDataCache.getCache().getOrderbookData(orderbookEvent.orderbookId()).instrument().product().market().marketId();
-        partitionKeyToMatchingEngine.computeIfAbsent(marketId, key -> {
+        var id = ReferenceDataCache.getCache().getOrderbookData(orderbookEvent.orderbookId()).instrument().product().market().marketId();
+        partitionKeyToMatchingEngine.computeIfAbsent(id, key -> {
                     var matchingEngine = new MatchingEngine(key, broadcastHandler);
                     matchingEngine.init();
                     return matchingEngine;

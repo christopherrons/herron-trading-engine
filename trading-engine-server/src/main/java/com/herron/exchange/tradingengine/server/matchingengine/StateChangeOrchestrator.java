@@ -54,10 +54,10 @@ public class StateChangeOrchestrator {
             scheduleOpenAuctionTrading(orderbookData);
             scheduleOpenAuctionRun(orderbookData);
             scheduleContinuous(orderbookData);
-            scheduleCloseAuctionTrading(orderbookData);
-            scheduleCloseAuctionRun(orderbookData);
-            schedulePostTrade(orderbookData);
-            scheduleClosed(orderbookData);
+            //  scheduleCloseAuctionTrading(orderbookData);
+            //  scheduleCloseAuctionRun(orderbookData);
+            // schedulePostTrade(orderbookData);
+            // scheduleClosed(orderbookData);
         }
 
         try {
