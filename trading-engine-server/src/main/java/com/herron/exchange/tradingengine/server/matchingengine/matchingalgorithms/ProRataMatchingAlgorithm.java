@@ -111,40 +111,40 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
 
     private List<OrderbookEvent> matchProRata(final Order incomingOrder, final PriceLevel opposingBest) {
 
-        final double volumeAtPriceLevel = opposingBest.volumeAtPriceLevel().getValue();
-        final double tradeVolume = Math.min(incomingOrder.currentVolume().getValue(), volumeAtPriceLevel);
+        final Volume volumeAtPriceLevel = opposingBest.volumeAtPriceLevel();
+        final Volume tradeVolume = incomingOrder.currentVolume().min(volumeAtPriceLevel);
 
-        double remainingTradeVolume = tradeVolume;
+        Volume remainingTradeVolume = tradeVolume;
         Map<OrderKey, Volume> keyToVolume = new LinkedHashMap<>();
         Order updatedIncomingKey = incomingOrder;
         for (var opposingOrder : opposingBest) {
-            double tradeVolumeWeighted = tradeVolume * (opposingOrder.currentVolume().getValue() / volumeAtPriceLevel);
-            tradeVolumeWeighted = Math.min(remainingTradeVolume, tradeVolumeWeighted);
+            Volume tradeVolumeWeighted = tradeVolume.multiply(opposingOrder.currentVolume().divide(volumeAtPriceLevel));
+            tradeVolumeWeighted = remainingTradeVolume.min(tradeVolumeWeighted);
 
-            if (tradeVolumeWeighted <= 0) {
-                remainingTradeVolume = 0;
+            if (tradeVolumeWeighted.leq(0)) {
+                remainingTradeVolume = Volume.ZERO;
                 break;
-            } else if (tradeVolumeWeighted - minTradeVolume < 0) {
+            } else if (tradeVolumeWeighted.subtract(minTradeVolume).leq(0)) {
                 break;
             }
 
-            remainingTradeVolume -= tradeVolumeWeighted;
+            remainingTradeVolume = remainingTradeVolume.subtract(tradeVolumeWeighted);
 
             var key = new OrderKey(updatedIncomingKey, opposingOrder);
             var currentVolumeTrade = keyToVolume.computeIfAbsent(key, k -> Volume.ZERO);
-            keyToVolume.put(key, currentVolumeTrade.add(Volume.create(tradeVolumeWeighted)));
+            keyToVolume.put(key, currentVolumeTrade.add(tradeVolumeWeighted));
 
-            updatedIncomingKey = buildUpdateOrder(updatedIncomingKey, Volume.create(tradeVolumeWeighted), PARTIAL_FILL);
+            updatedIncomingKey = buildUpdateOrder(updatedIncomingKey, tradeVolumeWeighted, PARTIAL_FILL);
         }
 
         final List<OrderbookEvent> result = new ArrayList<>();
         for (var entry : keyToVolume.entrySet()) {
             var key = entry.getKey();
             var volume = entry.getValue();
-            if (remainingTradeVolume > 0 && key.incomingOrder.equals(incomingOrder)) {
-                result.addAll(createMatchingMessages(key.incomingOrder, key.opposingOrder, volume.add(Volume.create(remainingTradeVolume))));
-            } else if (remainingTradeVolume > 0) {
-                result.addAll(createMatchingMessages(buildUpdateOrder(key.incomingOrder, Volume.create(remainingTradeVolume), PARTIAL_FILL), key.opposingOrder, volume));
+            if (remainingTradeVolume.gt(0) && key.incomingOrder.equals(incomingOrder)) {
+                result.addAll(createMatchingMessages(key.incomingOrder, key.opposingOrder, volume.add(remainingTradeVolume)));
+            } else if (remainingTradeVolume.gt(0)) {
+                result.addAll(createMatchingMessages(buildUpdateOrder(key.incomingOrder, remainingTradeVolume, PARTIAL_FILL), key.opposingOrder, volume));
 
             } else {
                 result.addAll(createMatchingMessages(key.incomingOrder, key.opposingOrder, volume));
@@ -158,7 +158,6 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         return switch (incomingOrder.orderSide()) {
             case BID -> activeOrders.getBestAskPriceLevel();
             case ASK -> activeOrders.getBestBidPriceLevel();
-            default -> Optional.empty();
         };
     }
 
@@ -169,7 +168,6 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         return switch (incomingOrder.orderSide()) {
             case BID -> incomingOrder.price().geq(opposingPrice);
             case ASK -> incomingOrder.price().leq(opposingPrice);
-            default -> false;
         };
     }
 

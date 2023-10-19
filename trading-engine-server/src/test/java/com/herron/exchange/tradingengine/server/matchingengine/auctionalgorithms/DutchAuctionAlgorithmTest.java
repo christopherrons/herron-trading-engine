@@ -43,8 +43,8 @@ class DutchAuctionAlgorithmTest {
         activeOrders.addOrder(MessageCreatorTestUtils.buildOrderAdd(912, 32.20, 1, OrderSideEnum.ASK, "17"));
 
         var result = auctionAlgorithm.calculateEquilibriumPrice();
-        assertEquals(11, result.optimalPrice().matchedVolume().getValue());
-        assertEquals(32.00, result.optimalPrice().equilibriumPrice().getValue());
+        assertEquals(11, result.optimalPrice().matchedVolume().getRealValue());
+        assertEquals(32.00, result.optimalPrice().equilibriumPrice().getRealValue());
     }
 
 }

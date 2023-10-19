@@ -37,28 +37,28 @@ class ActiveOrdersTest {
         assertEquals(1, activeOrders.totalNumberOfPriceLevels());
         assertEquals(1, activeOrders.totalNumberOfBidPriceLevels());
         assertEquals(0, activeOrders.totalNumberOfAskPriceLevels());
-        assertEquals(10, activeOrders.getOrder("1").currentVolume().getValue());
-        assertEquals(100, activeOrders.getOrder("1").price().getValue());
+        assertEquals(10, activeOrders.getOrder("1").currentVolume().getRealValue());
+        assertEquals(100, activeOrders.getOrder("1").price().getRealValue());
 
         activeOrders.updateOrder(buildOrderAdd(0, 99, 9, BID, "1"));
         assertEquals(1, activeOrders.totalNumberOfPriceLevels());
         assertEquals(1, activeOrders.totalNumberOfBidPriceLevels());
         assertEquals(0, activeOrders.totalNumberOfAskPriceLevels());
-        assertEquals(9, activeOrders.getOrder("1").currentVolume().getValue());
-        assertEquals(99, activeOrders.getOrder("1").price().getValue());
+        assertEquals(9, activeOrders.getOrder("1").currentVolume().getRealValue());
+        assertEquals(99, activeOrders.getOrder("1").price().getRealValue());
     }
 
     @Test
     void test_best_price_after_insert_active_orders() {
         activeOrders.addOrder(buildOrderAdd(0, 100, 10, BID, "1"));
         activeOrders.addOrder(buildOrderAdd(2, 102, 10, ASK, "2"));
-        assertEquals(100, activeOrders.getBestBidPrice().getValue());
-        assertEquals(102, activeOrders.getBestAskPrice().getValue());
+        assertEquals(100, activeOrders.getBestBidPrice().getRealValue());
+        assertEquals(102, activeOrders.getBestAskPrice().getRealValue());
 
         activeOrders.addOrder(buildOrderAdd(0, 101, 10, BID, "3"));
         activeOrders.addOrder(buildOrderAdd(2, 101, 10, ASK, "3"));
-        assertEquals(101, activeOrders.getBestBidPrice().getValue());
-        assertEquals(101, activeOrders.getBestAskPrice().getValue());
+        assertEquals(101, activeOrders.getBestBidPrice().getRealValue());
+        assertEquals(101, activeOrders.getBestAskPrice().getRealValue());
     }
 
     @Test
@@ -86,13 +86,13 @@ class ActiveOrdersTest {
         activeOrders.addOrder(buildOrderAdd(2, 102, 10, ASK, "2"));
         activeOrders.addOrder(buildOrderAdd(0, 99, 10, BID, "3"));
         activeOrders.addOrder(buildOrderAdd(2, 103, 10, ASK, "4"));
-        assertEquals(100, activeOrders.getBestBidPrice().getValue());
-        assertEquals(102, activeOrders.getBestAskPrice().getValue());
+        assertEquals(100, activeOrders.getBestBidPrice().getRealValue());
+        assertEquals(102, activeOrders.getBestAskPrice().getRealValue());
 
         activeOrders.removeOrder("1");
         activeOrders.removeOrder("2");
-        assertEquals(99, activeOrders.getBestBidPrice().getValue());
-        assertEquals(103, activeOrders.getBestAskPrice().getValue());
+        assertEquals(99, activeOrders.getBestBidPrice().getRealValue());
+        assertEquals(103, activeOrders.getBestAskPrice().getRealValue());
     }
 
     @Test
@@ -102,7 +102,7 @@ class ActiveOrdersTest {
         activeOrders.addOrder(buildOrderAdd(2, 100, 10, BID, "3"));
 
         activeOrders.removeOrder("1");
-        assertEquals(20, activeOrders.totalBidVolume().getValue());
+        assertEquals(20, activeOrders.totalBidVolume().getRealValue());
     }
 
     @Test
@@ -111,15 +111,15 @@ class ActiveOrdersTest {
         activeOrders.addOrder(buildOrderAdd(2, 102, 13, ASK, "2"));
         activeOrders.addOrder(buildOrderAdd(0, 99, 12, BID, "3"));
         activeOrders.addOrder(buildOrderAdd(2, 103, 10, ASK, "4"));
-        assertEquals(46, activeOrders.totalOrderVolume().getValue());
-        assertEquals(23, activeOrders.totalBidVolume().getValue());
-        assertEquals(23, activeOrders.totalAskVolume().getValue());
+        assertEquals(46, activeOrders.totalOrderVolume().getRealValue());
+        assertEquals(23, activeOrders.totalBidVolume().getRealValue());
+        assertEquals(23, activeOrders.totalAskVolume().getRealValue());
 
         activeOrders.removeOrder("1");
         activeOrders.removeOrder("2");
-        assertEquals(22, activeOrders.totalOrderVolume().getValue());
-        assertEquals(12, activeOrders.totalBidVolume().getValue());
-        assertEquals(10, activeOrders.totalAskVolume().getValue());
+        assertEquals(22, activeOrders.totalOrderVolume().getRealValue());
+        assertEquals(12, activeOrders.totalBidVolume().getRealValue());
+        assertEquals(10, activeOrders.totalAskVolume().getRealValue());
     }
 
     @Test
@@ -129,20 +129,20 @@ class ActiveOrdersTest {
         activeOrders.addOrder(buildOrderAdd(0, 99, 12, BID, "3"));
         activeOrders.addOrder(buildOrderAdd(2, 103, 10, ASK, "4"));
         activeOrders.addOrder(buildOrderAdd(0, 100, 10, BID, "5"));
-        assertEquals(34, activeOrders.totalVolumeAtPriceLevel(1).getValue());
-        assertEquals(21, activeOrders.totalBidVolumeAtPriceLevel(1).getValue());
-        assertEquals(13, activeOrders.totalAskVolumeAtPriceLevel(1).getValue());
-        assertEquals(22, activeOrders.totalVolumeAtPriceLevel(2).getValue());
-        assertEquals(12, activeOrders.totalBidVolumeAtPriceLevel(2).getValue());
-        assertEquals(10, activeOrders.totalAskVolumeAtPriceLevel(2).getValue());
+        assertEquals(34, activeOrders.totalVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(21, activeOrders.totalBidVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(13, activeOrders.totalAskVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(22, activeOrders.totalVolumeAtPriceLevel(2).getRealValue());
+        assertEquals(12, activeOrders.totalBidVolumeAtPriceLevel(2).getRealValue());
+        assertEquals(10, activeOrders.totalAskVolumeAtPriceLevel(2).getRealValue());
 
         activeOrders.removeOrder("1");
         activeOrders.removeOrder("2");
-        assertEquals(20, activeOrders.totalVolumeAtPriceLevel(1).getValue());
-        assertEquals(10, activeOrders.totalBidVolumeAtPriceLevel(1).getValue());
-        assertEquals(10, activeOrders.totalAskVolumeAtPriceLevel(1).getValue());
-        assertEquals(12, activeOrders.totalVolumeAtPriceLevel(2).getValue());
-        assertEquals(12, activeOrders.totalBidVolumeAtPriceLevel(2).getValue());
-        assertEquals(0, activeOrders.totalAskVolumeAtPriceLevel(2).getValue());
+        assertEquals(20, activeOrders.totalVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(10, activeOrders.totalBidVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(10, activeOrders.totalAskVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(12, activeOrders.totalVolumeAtPriceLevel(2).getRealValue());
+        assertEquals(12, activeOrders.totalBidVolumeAtPriceLevel(2).getRealValue());
+        assertEquals(0, activeOrders.totalAskVolumeAtPriceLevel(2).getRealValue());
     }
 }

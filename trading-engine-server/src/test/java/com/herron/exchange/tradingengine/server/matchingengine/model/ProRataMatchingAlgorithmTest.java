@@ -82,28 +82,28 @@ class ProRataMatchingAlgorithmTest {
         assertEquals(1, orderbook.totalNumberOfPriceLevels());
         assertEquals(1, orderbook.totalNumberOfBidPriceLevels());
         assertEquals(0, orderbook.totalNumberOfAskPriceLevels());
-        assertEquals(10, orderbook.getOrder("1").currentVolume().getValue());
-        assertEquals(100, orderbook.getOrder("1").price().getValue());
+        assertEquals(10, orderbook.getOrder("1").currentVolume().getRealValue());
+        assertEquals(100, orderbook.getOrder("1").price().getRealValue());
 
         orderbook.updateOrderbook(buildOrderUpdate(0, 99, 9, BID, "1"));
         assertEquals(1, orderbook.totalNumberOfPriceLevels());
         assertEquals(1, orderbook.totalNumberOfBidPriceLevels());
         assertEquals(0, orderbook.totalNumberOfAskPriceLevels());
-        assertEquals(9, orderbook.getOrder("1").currentVolume().getValue());
-        assertEquals(99, orderbook.getOrder("1").price().getValue());
+        assertEquals(9, orderbook.getOrder("1").currentVolume().getRealValue());
+        assertEquals(99, orderbook.getOrder("1").price().getRealValue());
     }
 
     @Test
     void test_best_price_after_insert_orders() {
         orderbook.updateOrderbook(buildOrderAdd(0, 100, 10, BID, "1"));
         orderbook.updateOrderbook(buildOrderAdd(2, 102, 10, ASK, "2"));
-        assertEquals(100, orderbook.getBestBidPrice().getValue());
-        assertEquals(102, orderbook.getBestAskPrice().getValue());
+        assertEquals(100, orderbook.getBestBidPrice().getRealValue());
+        assertEquals(102, orderbook.getBestAskPrice().getRealValue());
 
         orderbook.updateOrderbook(buildOrderAdd(0, 101, 10, BID, "3"));
         orderbook.updateOrderbook(buildOrderAdd(2, 101, 10, ASK, "3"));
-        assertEquals(101, orderbook.getBestBidPrice().getValue());
-        assertEquals(101, orderbook.getBestAskPrice().getValue());
+        assertEquals(101, orderbook.getBestBidPrice().getRealValue());
+        assertEquals(101, orderbook.getBestAskPrice().getRealValue());
     }
 
     @Test
@@ -129,13 +129,13 @@ class ProRataMatchingAlgorithmTest {
         orderbook.updateOrderbook(buildOrderAdd(2, 102, 10, ASK, "2"));
         orderbook.updateOrderbook(buildOrderAdd(0, 99, 10, BID, "3"));
         orderbook.updateOrderbook(buildOrderAdd(2, 103, 10, ASK, "4"));
-        assertEquals(100, orderbook.getBestBidPrice().getValue());
-        assertEquals(102, orderbook.getBestAskPrice().getValue());
+        assertEquals(100, orderbook.getBestBidPrice().getRealValue());
+        assertEquals(102, orderbook.getBestAskPrice().getRealValue());
 
         orderbook.removeOrder("1");
         orderbook.removeOrder("2");
-        assertEquals(99, orderbook.getBestBidPrice().getValue());
-        assertEquals(103, orderbook.getBestAskPrice().getValue());
+        assertEquals(99, orderbook.getBestBidPrice().getRealValue());
+        assertEquals(103, orderbook.getBestAskPrice().getRealValue());
     }
 
     @Test
@@ -144,16 +144,16 @@ class ProRataMatchingAlgorithmTest {
         orderbook.updateOrderbook(buildOrderAdd(2, 102, 13, ASK, "2"));
         orderbook.updateOrderbook(buildOrderAdd(0, 99, 12, BID, "3"));
         orderbook.updateOrderbook(buildOrderAdd(2, 103, 10, ASK, "4"));
-        assertEquals(46, orderbook.totalOrderVolume().getValue());
-        assertEquals(23, orderbook.totalBidVolume().getValue());
-        assertEquals(23, orderbook.totalAskVolume().getValue());
+        assertEquals(46, orderbook.totalOrderVolume().getRealValue());
+        assertEquals(23, orderbook.totalBidVolume().getRealValue());
+        assertEquals(23, orderbook.totalAskVolume().getRealValue());
 
 
         orderbook.removeOrder("1");
         orderbook.removeOrder("2");
-        assertEquals(22, orderbook.totalOrderVolume().getValue());
-        assertEquals(12, orderbook.totalBidVolume().getValue());
-        assertEquals(10, orderbook.totalAskVolume().getValue());
+        assertEquals(22, orderbook.totalOrderVolume().getRealValue());
+        assertEquals(12, orderbook.totalBidVolume().getRealValue());
+        assertEquals(10, orderbook.totalAskVolume().getRealValue());
     }
 
     @Test
@@ -163,21 +163,21 @@ class ProRataMatchingAlgorithmTest {
         orderbook.updateOrderbook(buildOrderAdd(0, 99, 12, BID, "3"));
         orderbook.updateOrderbook(buildOrderAdd(2, 103, 10, ASK, "4"));
         orderbook.updateOrderbook(buildOrderAdd(0, 100, 10, BID, "5"));
-        assertEquals(34, orderbook.totalVolumeAtPriceLevel(1).getValue());
-        assertEquals(21, orderbook.totalBidVolumeAtPriceLevel(1).getValue());
-        assertEquals(13, orderbook.totalAskVolumeAtPriceLevel(1).getValue());
-        assertEquals(22, orderbook.totalVolumeAtPriceLevel(2).getValue());
-        assertEquals(12, orderbook.totalBidVolumeAtPriceLevel(2).getValue());
-        assertEquals(10, orderbook.totalAskVolumeAtPriceLevel(2).getValue());
+        assertEquals(34, orderbook.totalVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(21, orderbook.totalBidVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(13, orderbook.totalAskVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(22, orderbook.totalVolumeAtPriceLevel(2).getRealValue());
+        assertEquals(12, orderbook.totalBidVolumeAtPriceLevel(2).getRealValue());
+        assertEquals(10, orderbook.totalAskVolumeAtPriceLevel(2).getRealValue());
 
         orderbook.removeOrder("1");
         orderbook.removeOrder("2");
-        assertEquals(20, orderbook.totalVolumeAtPriceLevel(1).getValue());
-        assertEquals(10, orderbook.totalBidVolumeAtPriceLevel(1).getValue());
-        assertEquals(10, orderbook.totalAskVolumeAtPriceLevel(1).getValue());
-        assertEquals(12, orderbook.totalVolumeAtPriceLevel(2).getValue());
-        assertEquals(12, orderbook.totalBidVolumeAtPriceLevel(2).getValue());
-        assertEquals(0, orderbook.totalAskVolumeAtPriceLevel(2).getValue());
+        assertEquals(20, orderbook.totalVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(10, orderbook.totalBidVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(10, orderbook.totalAskVolumeAtPriceLevel(1).getRealValue());
+        assertEquals(12, orderbook.totalVolumeAtPriceLevel(2).getRealValue());
+        assertEquals(12, orderbook.totalBidVolumeAtPriceLevel(2).getRealValue());
+        assertEquals(0, orderbook.totalAskVolumeAtPriceLevel(2).getRealValue());
     }
 
     @Test
@@ -202,8 +202,8 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
 
         assertEquals(6, result.size());
-        assertEquals(5, ((Trade) result.get(2)).volume().getValue());
-        assertEquals(5, ((Trade) result.get(5)).volume().getValue());
+        assertEquals(5, ((Trade) result.get(2)).volume().getRealValue());
+        assertEquals(5, ((Trade) result.get(5)).volume().getRealValue());
     }
 
     @Test
@@ -219,9 +219,9 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
 
         assertEquals(9, result.size());
-        assertEquals(5, ((Trade) result.get(2)).volume().getValue());
-        assertEquals(3, ((Trade) result.get(5)).volume().getValue());
-        assertEquals(2, ((Trade) result.get(8)).volume().getValue());
+        assertEquals(5, ((Trade) result.get(2)).volume().getRealValue());
+        assertEquals(3, ((Trade) result.get(5)).volume().getRealValue());
+        assertEquals(2, ((Trade) result.get(8)).volume().getRealValue());
     }
 
     @Test
@@ -238,10 +238,10 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
 
         assertEquals(12, result.size());
-        assertEquals(50, ((Trade) result.get(2)).volume().getValue());
-        assertEquals(30, ((Trade) result.get(5)).volume().getValue());
-        assertEquals(20, ((Trade) result.get(8)).volume().getValue());
-        assertEquals(45, ((Trade) result.get(11)).volume().getValue());
+        assertEquals(50, ((Trade) result.get(2)).volume().getRealValue());
+        assertEquals(30, ((Trade) result.get(5)).volume().getRealValue());
+        assertEquals(20, ((Trade) result.get(8)).volume().getRealValue());
+        assertEquals(45, ((Trade) result.get(11)).volume().getRealValue());
     }
 
     @Test
@@ -292,9 +292,9 @@ class ProRataMatchingAlgorithmTest {
 
         assertEquals(6, result.size());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(5)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(5)).volume().getRealValue());
     }
 
     @Test
@@ -309,7 +309,7 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
     }
 
     @Test
@@ -338,9 +338,9 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(5)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(5)).volume().getRealValue());
     }
 
     @Test
@@ -355,7 +355,7 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(FILLED, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
     }
 
     @Test
@@ -379,9 +379,9 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(7, result.size());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(5)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(5)).volume().getRealValue());
         assertEquals(KILLED, ((Order) result.get(6)).orderOperationCause());
 
     }
@@ -402,7 +402,7 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
     }
 
     @Test
@@ -431,9 +431,9 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(5)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(5)).volume().getRealValue());
     }
 
     @Test
@@ -448,7 +448,7 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
     }
 
     @Test
@@ -472,9 +472,9 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(5)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(5)).volume().getRealValue());
     }
 
     @Test
@@ -489,7 +489,7 @@ class ProRataMatchingAlgorithmTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(FILLED, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(10, ((Trade) result.get(2)).volume().getRealValue());
     }
 
     @Test
@@ -512,9 +512,9 @@ class ProRataMatchingAlgorithmTest {
         assertEquals(6, result.size());
         assertEquals(PARTIAL_FILL, ((Order) result.get(0)).orderOperationCause());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(30, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(30, ((Trade) result.get(2)).volume().getRealValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
         assertEquals(PARTIAL_FILL, ((Order) result.get(4)).orderOperationCause());
-        assertEquals(20, ((Trade) result.get(5)).volume().getValue());
+        assertEquals(20, ((Trade) result.get(5)).volume().getRealValue());
     }
 }
