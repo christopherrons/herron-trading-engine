@@ -10,8 +10,12 @@ public class FifoOrderBookComparator implements Comparator<Order> {
     public int compare(Order order, Order otherEvent) {
         if (order.timeOfEventMs() < otherEvent.timeOfEventMs()) {
             return -1;
+
+        } else if (order.timeOfEventMs() > otherEvent.timeOfEventMs()) {
+            return 1;
+
         } else {
-            return order.orderId().equals(otherEvent.orderId()) ? 0 : 1;
+            return order.orderId().compareTo(otherEvent.orderId());
         }
     }
 }

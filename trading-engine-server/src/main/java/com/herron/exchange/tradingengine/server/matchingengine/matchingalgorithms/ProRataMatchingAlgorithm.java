@@ -9,10 +9,7 @@ import com.herron.exchange.tradingengine.server.matchingengine.api.ActiveOrderRe
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.orderbook.model.PriceLevel;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.KILLED;
 import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.PARTIAL_FILL;
@@ -112,29 +109,46 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         return matchProRata(marketOrder, opposingBest);
     }
 
-    private List<OrderbookEvent> matchProRata(Order incomingOrder, PriceLevel opposingBest) {
+    private List<OrderbookEvent> matchProRata(final Order incomingOrder, final PriceLevel opposingBest) {
 
-        final List<OrderbookEvent> result = new ArrayList<>();
         final double volumeAtPriceLevel = opposingBest.volumeAtPriceLevel().getValue();
         final double tradeVolume = Math.min(incomingOrder.currentVolume().getValue(), volumeAtPriceLevel);
 
         double remainingTradeVolume = tradeVolume;
+        Map<OrderKey, Volume> keyToVolume = new LinkedHashMap<>();
+        Order updatedIncomingKey = incomingOrder;
         for (var opposingOrder : opposingBest) {
             double tradeVolumeWeighted = tradeVolume * (opposingOrder.currentVolume().getValue() / volumeAtPriceLevel);
-            double minTradeVolumeWeighted = minTradeVolume == 0 ? tradeVolumeWeighted :
-                    Math.floor(tradeVolumeWeighted / minTradeVolume) + Math.max(tradeVolumeWeighted % minTradeVolume, minTradeVolume);
 
             if (remainingTradeVolume <= 0) {
                 break;
-            } else if (remainingTradeVolume - minTradeVolumeWeighted < 0) {
-                result.addAll(createMatchingMessages(incomingOrder, opposingBest.first(), Volume.create(remainingTradeVolume)));
+            } else if (remainingTradeVolume - minTradeVolume < 0) {
                 break;
             }
 
-            remainingTradeVolume -= minTradeVolumeWeighted;
-            result.addAll(createMatchingMessages(incomingOrder, opposingOrder, Volume.create(minTradeVolumeWeighted)));
-            incomingOrder = buildUpdateOrder(incomingOrder, Volume.create(minTradeVolumeWeighted), PARTIAL_FILL);
+            remainingTradeVolume -= tradeVolumeWeighted;
+
+            var key = new OrderKey(updatedIncomingKey, opposingOrder);
+            var currentVolumeTrade = keyToVolume.computeIfAbsent(key, k -> Volume.ZERO);
+            keyToVolume.put(key, currentVolumeTrade.add(Volume.create(tradeVolumeWeighted)));
+
+            updatedIncomingKey = buildUpdateOrder(updatedIncomingKey, Volume.create(tradeVolumeWeighted), PARTIAL_FILL);
         }
+
+        final List<OrderbookEvent> result = new ArrayList<>();
+        for (var entry : keyToVolume.entrySet()) {
+            var key = entry.getKey();
+            var volume = entry.getValue();
+            if (remainingTradeVolume > 0 && key.incomingOrder.equals(incomingOrder)) {
+                result.addAll(createMatchingMessages(key.incomingOrder, key.opposingOrder, volume.add(Volume.create(remainingTradeVolume))));
+            } else if (remainingTradeVolume > 0) {
+                result.addAll(createMatchingMessages(buildUpdateOrder(updatedIncomingKey, Volume.create(remainingTradeVolume), PARTIAL_FILL), key.opposingOrder, volume));
+
+            } else {
+                result.addAll(createMatchingMessages(key.incomingOrder, key.opposingOrder, volume));
+            }
+        }
+
         return result;
     }
 
@@ -161,6 +175,10 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         List<OrderbookEvent> matchingMessages = new ArrayList<>();
         matchingMessages.add(buildCancelOrder(nonActiveOrder, KILLED));
         return matchingMessages;
+    }
+
+    private record OrderKey(Order incomingOrder, Order opposingOrder) {
+
     }
 
 }

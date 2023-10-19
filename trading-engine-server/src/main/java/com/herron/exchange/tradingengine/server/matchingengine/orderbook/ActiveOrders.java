@@ -56,7 +56,7 @@ public class ActiveOrders implements ActiveOrderReadOnly {
                 return removePriceLevel(order);
             }
         } else {
-            LOGGER.error("Cannot remove order {}, price level does not exist.", order);
+            LOGGER.error("Cannot remove order {}, price level or order does not exist.", order);
             return false;
         }
 

@@ -17,10 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.PriorityBlockingQueue;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
@@ -31,7 +28,8 @@ public class MatchingEngine {
     private static final PartitionKey TRADE_DATA_KEY = new PartitionKey(KafkaTopicEnum.TRADE_DATA, 0);
     private static final PartitionKey TOP_OF_BOOK_DATA_KEY = new PartitionKey(KafkaTopicEnum.TOP_OF_BOOK_QUOTE, 0);
     private static final Logger LOGGER = LoggerFactory.getLogger(MatchingEngine.class);
-    private final BlockingQueue<OrderbookEvent> eventQueue = new PriorityBlockingQueue<>(50, new EventComparator<>());
+    //private final BlockingQueue<OrderbookEvent> eventQueue = new PriorityBlockingQueue<>(50, new EventComparator<>());
+    private final BlockingQueue<OrderbookEvent> eventQueue = new LinkedBlockingDeque<>();
     private final OrderbookCache orderbookCache = new OrderbookCache();
     private final Thread pollThread;
     private final ScheduledExecutorService queueLoggerThread;
@@ -68,7 +66,6 @@ public class MatchingEngine {
     private void runMatching() {
         LOGGER.info("Starting matching engine.");
         OrderbookEvent orderbookEvent;
-        boolean t = true;
         while (isMatching.get() || !eventQueue.isEmpty()) {
 
             orderbookEvent = poll();
@@ -174,7 +171,7 @@ public class MatchingEngine {
     }
 
     private void broadcast(TradeExecution tradeExecution) {
-        if (tradeExecution != null) {
+        if (tradeExecution != null && !tradeExecution.messages().isEmpty()) {
             broadcast(AUDIT_TRAIL_KEY, tradeExecution);
             tradeExecution.messages().stream().filter(Trade.class::isInstance).forEach(t -> broadcast(TRADE_DATA_KEY, t));
         }

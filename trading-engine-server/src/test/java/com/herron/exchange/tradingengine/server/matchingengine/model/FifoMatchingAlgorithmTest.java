@@ -1,14 +1,11 @@
 package com.herron.exchange.tradingengine.server.matchingengine.model;
 
-
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
 import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.api.trading.trades.Trade;
+import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
 import com.herron.exchange.common.api.common.enums.TimeInForceEnum;
-import com.herron.exchange.common.api.common.messages.common.DefaultBusinessCalendar;
-import com.herron.exchange.common.api.common.messages.common.Member;
-import com.herron.exchange.common.api.common.messages.common.Participant;
-import com.herron.exchange.common.api.common.messages.common.User;
+import com.herron.exchange.common.api.common.messages.common.*;
 import com.herron.exchange.common.api.common.messages.refdata.ImmutableDefaultEquityInstrument;
 import com.herron.exchange.common.api.common.messages.refdata.ImmutableDefaultMarket;
 import com.herron.exchange.common.api.common.messages.refdata.ImmutableDefaultOrderbookData;
@@ -24,7 +21,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static com.herron.exchange.common.api.common.enums.AuctionAlgorithmEnum.DUTCH;
-import static com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum.PRO_RATA;
+import static com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum.FIFO;
 import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.*;
 import static com.herron.exchange.common.api.common.enums.OrderSideEnum.ASK;
 import static com.herron.exchange.common.api.common.enums.OrderSideEnum.BID;
@@ -32,21 +29,18 @@ import static com.herron.exchange.common.api.common.enums.OrderTypeEnum.LIMIT;
 import static com.herron.exchange.common.api.common.enums.OrderTypeEnum.MARKET;
 import static com.herron.exchange.common.api.common.enums.TimeInForceEnum.FOK;
 import static com.herron.exchange.common.api.common.enums.TimeInForceEnum.SESSION;
-import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.CONTINUOUS_TRADING;
-import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.PRE_TRADE;
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.MessageCreatorTestUtils.buildOrderAdd;
-import static com.herron.exchange.tradingengine.server.matchingengine.utils.MessageCreatorTestUtils.buildOrderUpdate;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
+import static com.herron.exchange.tradingengine.server.matchingengine.utils.MessageCreatorTestUtils.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-class ProRataOrderbookTest {
+class FifoMatchingAlgorithmTest {
     private Orderbook orderbook;
 
     @BeforeEach
     void init() {
         var orderbookData = ImmutableDefaultOrderbookData.builder()
                 .orderbookId("orderbookId")
-                .matchingAlgorithm(PRO_RATA)
+                .matchingAlgorithm(FIFO)
                 .tradingCurrency("eur")
                 .minTradeVolume(0)
                 .auctionAlgorithm(DUTCH)
@@ -114,8 +108,8 @@ class ProRataOrderbookTest {
         assertEquals(2, orderbook.totalNumberOfBidOrders());
         assertEquals(1, orderbook.totalNumberOfAskOrders());
 
-        orderbook.removeOrder("2");
-        orderbook.removeOrder("3");
+        orderbook.updateOrderbook(buildOrderDelete(0, 100, 10, BID, "2"));
+        orderbook.updateOrderbook(buildOrderDelete(4, 101, 10, ASK, "3"));
         assertEquals(1, orderbook.totalNumberOfActiveOrders());
         assertEquals(1, orderbook.totalNumberOfBidOrders());
         assertEquals(0, orderbook.totalNumberOfAskOrders());
@@ -179,64 +173,37 @@ class ProRataOrderbookTest {
     }
 
     @Test
+    void test_matching_algorithm_same_price_Level() {
+        orderbook.updateOrderbook(buildOrderAdd(0, 100, 10, BID, "1"));
+        var order = buildOrderAdd(2, 100, 15, ASK, "2");
+        orderbook.updateOrderbook(order);
+
+        List<OrderbookEvent> matchingEvents = orderbook.runMatchingAlgorithm(order).messages();
+
+        Trade trade = matchingEvents.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
+        assertEquals(5, orderbook.totalOrderVolume().getValue());
+        assertNotEquals("0", trade.tradeId());
+        assertFalse(trade.isBidSideAggressor());
+
+        order = buildOrderAdd(3, 100, 6, BID, "3");
+        orderbook.updateOrderbook(order);
+        matchingEvents = orderbook.runMatchingAlgorithm(order).messages();
+
+        trade = matchingEvents.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst().get();
+        assertEquals(1, orderbook.totalOrderVolume().getValue());
+        assertNotEquals("0", trade.tradeId());
+        assertTrue(trade.isBidSideAggressor());
+    }
+
+    @Test
     void test_matching_algorithm_self_match() {
         orderbook.updateOrderbook(buildOrderAdd(0, 100, 10, BID, "1", new Participant(new Member("member"), new User("user"))));
         var order = buildOrderAdd(2, 100, 15, ASK, "2", new Participant(new Member("member"), new User("user")));
         orderbook.updateOrderbook(order);
         List<OrderbookEvent> matchingEvents = orderbook.runMatchingAlgorithm(order).messages();
+
         Optional<Trade> trade = matchingEvents.stream().filter(m -> m instanceof Trade).map(t -> (Trade) t).findFirst();
         assertFalse(trade.isPresent());
-    }
-
-    @Test
-    void test_matching_algorithm_limit_same_proportion_fill_fill() {
-        orderbook.updateOrderbook(buildOrderAdd(0, 99, 10, BID, "1"));
-        orderbook.updateOrderbook(buildOrderAdd(0, 100, 10, BID, "2"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 101, 10, ASK, "3"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 101, 10, ASK, "4"));
-
-        var order = buildOrderAdd(3, 101, 10, BID, "5", SESSION, LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order).messages();
-
-        assertEquals(6, result.size());
-        assertEquals(5, ((Trade) result.get(2)).volume().getValue());
-        assertEquals(5, ((Trade) result.get(5)).volume().getValue());
-    }
-
-    @Test
-    void test_matching_algorithm_limit_uneven_proportion_fill_fill() {
-        orderbook.updateOrderbook(buildOrderAdd(0, 99, 10, BID, "1"));
-        orderbook.updateOrderbook(buildOrderAdd(0, 100, 10, BID, "2"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 101, 50, ASK, "3"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 101, 20, ASK, "4"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 101, 30, ASK, "5"));
-
-        var order = buildOrderAdd(3, 101, 10, BID, "6", SESSION, LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order).messages();
-
-        assertEquals(9, result.size());
-        assertEquals(5, ((Trade) result.get(2)).volume().getValue());
-        assertEquals(3, ((Trade) result.get(5)).volume().getValue());
-        assertEquals(2, ((Trade) result.get(8)).volume().getValue());
-    }
-
-    @Test
-    void test_matching_algorithm_limit_uneven_proportion_multiple_level_fill_fill() {
-        orderbook.updateOrderbook(buildOrderAdd(0, 99, 10, BID, "1"));
-        orderbook.updateOrderbook(buildOrderAdd(0, 100, 10, BID, "2"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 101, 50, ASK, "3"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 101, 20, ASK, "4"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 101, 30, ASK, "5"));
-        orderbook.updateOrderbook(buildOrderAdd(2, 102, 45, ASK, "6"));
-
-        var order = buildOrderAdd(3, 102, 200, BID, "7", SESSION, LIMIT);
-        var result = orderbook.runMatchingAlgorithm(order).messages();
-
-        assertEquals(12, result.size());
-        assertEquals(50, ((Trade) result.get(2)).volume().getValue());
-        assertEquals(30, ((Trade) result.get(5)).volume().getValue());
-        assertEquals(20, ((Trade) result.get(8)).volume().getValue());
-        assertEquals(45, ((Trade) result.get(11)).volume().getValue());
     }
 
     @Test
@@ -284,9 +251,11 @@ class ProRataOrderbookTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
 
         assertEquals(6, result.size());
+        assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(2)).volume().getValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
+        assertEquals(FILLED, ((Order) result.get(4)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(5)).volume().getValue());
     }
 
@@ -301,7 +270,6 @@ class ProRataOrderbookTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
     }
 
     @Test
@@ -327,9 +295,11 @@ class ProRataOrderbookTest {
         var order = buildOrderAdd(3, 102, 20, BID, "5", TimeInForceEnum.FAK, LIMIT);
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
+        assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(2)).volume().getValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
+        assertEquals(FILLED, ((Order) result.get(4)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(5)).volume().getValue());
     }
 
@@ -343,8 +313,7 @@ class ProRataOrderbookTest {
         var order = buildOrderAdd(3, 101, 10, BID, "5", TimeInForceEnum.FAK, LIMIT);
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
-        assertEquals(FILLED, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+        assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
     }
 
     @Test
@@ -365,12 +334,13 @@ class ProRataOrderbookTest {
         var order = buildOrderAdd(3, Integer.MAX_VALUE, 100, BID, "5", SESSION, MARKET);
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(7, result.size());
+        assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(2)).volume().getValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
+        assertEquals(PARTIAL_FILL, ((Order) result.get(4)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(5)).volume().getValue());
         assertEquals(KILLED, ((Order) result.get(6)).orderOperationCause());
-
     }
 
     @Test
@@ -388,7 +358,6 @@ class ProRataOrderbookTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
     }
 
     @Test
@@ -414,9 +383,11 @@ class ProRataOrderbookTest {
         var order = buildOrderAdd(3, Integer.MAX_VALUE, 20, BID, "5", FOK, MARKET);
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
+        assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
-        assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
+        assertEquals(10, ((Trade) result.get(5)).volume().getValue());
+        assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
+        assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(5)).volume().getValue());
     }
 
@@ -431,7 +402,6 @@ class ProRataOrderbookTest {
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
         assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
-        assertEquals(10, ((Trade) result.get(2)).volume().getValue());
     }
 
     @Test
@@ -452,9 +422,11 @@ class ProRataOrderbookTest {
         var order = buildOrderAdd(3, Integer.MAX_VALUE, 20, BID, "5", TimeInForceEnum.FAK, MARKET);
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(6, result.size());
+        assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
         assertEquals(PARTIAL_FILL, ((Order) result.get(1)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(2)).volume().getValue());
         assertEquals(FILLED, ((Order) result.get(3)).orderOperationCause());
+        assertEquals(FILLED, ((Order) result.get(4)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(5)).volume().getValue());
     }
 
@@ -468,7 +440,42 @@ class ProRataOrderbookTest {
         var order = buildOrderAdd(3, Integer.MAX_VALUE, 10, BID, "5", TimeInForceEnum.FAK, MARKET);
         var result = orderbook.runMatchingAlgorithm(order).messages();
         assertEquals(3, result.size());
+        assertEquals(FILLED, ((Order) result.get(0)).orderOperationCause());
         assertEquals(FILLED, ((Order) result.get(1)).orderOperationCause());
         assertEquals(10, ((Trade) result.get(2)).volume().getValue());
+    }
+
+    @Test
+    void test_auction_matching() {
+        orderbook.updateOrderbook(buildOrderAdd(899, 32.00, 2, BID, "1"));
+        orderbook.updateOrderbook(buildOrderAdd(900, 32.00, 1, BID, "2"));
+        orderbook.updateOrderbook(buildOrderAdd(911, 32.00, 8, BID, "3"));
+        orderbook.updateOrderbook(buildOrderAdd(902, 31.90, 6, BID, "4"));
+        orderbook.updateOrderbook(buildOrderAdd(910, 31.90, 3, BID, "5"));
+        orderbook.updateOrderbook(buildOrderAdd(914, 31.90, 2, BID, "6"));
+        orderbook.updateOrderbook(buildOrderAdd(913, 31.80, 2, BID, "7"));
+
+        orderbook.updateOrderbook(buildOrderAdd(901, 31.90, 2, ASK, "8"));
+        orderbook.updateOrderbook(buildOrderAdd(910, 31.90, 8, ASK, "9"));
+        orderbook.updateOrderbook(buildOrderAdd(905, 32.00, 10, ASK, "10"));
+        orderbook.updateOrderbook(buildOrderAdd(913, 32.00, 4, ASK, "11"));
+        orderbook.updateOrderbook(buildOrderAdd(914, 32.00, 2, ASK, "12"));
+        orderbook.updateOrderbook(buildOrderAdd(912, 32.10, 6, ASK, "13"));
+        orderbook.updateOrderbook(buildOrderAdd(913, 32.10, 2, ASK, "14"));
+        orderbook.updateOrderbook(buildOrderAdd(901, 32.20, 4, ASK, "15"));
+        orderbook.updateOrderbook(buildOrderAdd(908, 32.20, 2, ASK, "16"));
+        orderbook.updateOrderbook(buildOrderAdd(912, 32.20, 1, ASK, "17"));
+
+        orderbook.updateState(CLOSING_AUCTION_TRADING);
+        orderbook.updateState(CLOSING_AUCTION_RUN);
+        TradeExecution tradeExecution = orderbook.runAuctionAlgorithm();
+        List<Trade> trades = tradeExecution.messages().stream().filter(Trade.class::isInstance).map(Trade.class::cast).toList();
+        assertEquals(4, trades.size());
+        assertEquals(11, trades.stream().map(Trade::volume).reduce(Volume.ZERO, Volume::add).getValue());
+        assertEquals(11, orderbook.totalBidVolumeAtPriceLevel(1).getValue());
+        assertEquals(2, orderbook.totalBidVolumeAtPriceLevel(2).getValue());
+        assertEquals(15, orderbook.totalAskVolumeAtPriceLevel(1).getValue());
+        assertEquals(8, orderbook.totalAskVolumeAtPriceLevel(2).getValue());
+        assertEquals(7, orderbook.totalAskVolumeAtPriceLevel(3).getValue());
     }
 }

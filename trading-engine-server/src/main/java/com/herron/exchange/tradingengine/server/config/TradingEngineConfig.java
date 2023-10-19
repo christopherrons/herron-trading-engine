@@ -6,8 +6,8 @@ import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.mapping.DefaultMessageFactory;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
-import com.herron.exchange.tradingengine.server.consumers.UserOrderDataConsumer;
 import com.herron.exchange.tradingengine.server.consumers.ReferenceDataConsumer;
+import com.herron.exchange.tradingengine.server.consumers.UserOrderDataConsumer;
 import com.herron.exchange.tradingengine.server.matchingengine.StateChangeOrchestrator;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -38,8 +38,8 @@ public class TradingEngineConfig {
         return new UserOrderDataConsumer(
                 tradingEngine,
                 messageFactory,
-                Map.of(new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0), 50000)
-                );
+                Map.of(new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0), 100000)
+        );
     }
 
     @Bean
@@ -60,7 +60,13 @@ public class TradingEngineConfig {
 
     @Bean
     public KafkaBroadcastHandler kafkaBroadcastHandler(KafkaTemplate<String, Object> kafkaTemplate) {
-        return new KafkaBroadcastHandler(kafkaTemplate);
+        return new KafkaBroadcastHandler(
+                kafkaTemplate,
+                Map.of(
+                        new PartitionKey(KafkaTopicEnum.AUDIT_TRAIL, 0), 100000,
+                        new PartitionKey(KafkaTopicEnum.TOP_OF_BOOK_QUOTE, 0), 10000
+                )
+        );
     }
 
     @Bean
