@@ -119,10 +119,12 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
         Order updatedIncomingKey = incomingOrder;
         for (var opposingOrder : opposingBest) {
             double tradeVolumeWeighted = tradeVolume * (opposingOrder.currentVolume().getValue() / volumeAtPriceLevel);
+            tradeVolumeWeighted = Math.min(remainingTradeVolume, tradeVolumeWeighted);
 
-            if (remainingTradeVolume <= 0) {
+            if (tradeVolumeWeighted <= 0) {
+                remainingTradeVolume = 0;
                 break;
-            } else if (remainingTradeVolume - minTradeVolume < 0) {
+            } else if (tradeVolumeWeighted - minTradeVolume < 0) {
                 break;
             }
 
@@ -142,7 +144,7 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
             if (remainingTradeVolume > 0 && key.incomingOrder.equals(incomingOrder)) {
                 result.addAll(createMatchingMessages(key.incomingOrder, key.opposingOrder, volume.add(Volume.create(remainingTradeVolume))));
             } else if (remainingTradeVolume > 0) {
-                result.addAll(createMatchingMessages(buildUpdateOrder(updatedIncomingKey, Volume.create(remainingTradeVolume), PARTIAL_FILL), key.opposingOrder, volume));
+                result.addAll(createMatchingMessages(buildUpdateOrder(key.incomingOrder, Volume.create(remainingTradeVolume), PARTIAL_FILL), key.opposingOrder, volume));
 
             } else {
                 result.addAll(createMatchingMessages(key.incomingOrder, key.opposingOrder, volume));

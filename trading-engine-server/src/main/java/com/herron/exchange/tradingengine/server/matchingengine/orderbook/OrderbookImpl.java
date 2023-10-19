@@ -233,7 +233,6 @@ public class OrderbookImpl implements Orderbook {
         if (incomingOrder.currentVolume().leq(0) || currentState != CONTINUOUS_TRADING) {
             return null;
         }
-
         final List<OrderbookEvent> events = new ArrayList<>();
         List<OrderbookEvent> matchingEvents;
         Order updatedMatchingOrder = incomingOrder;
@@ -260,7 +259,7 @@ public class OrderbookImpl implements Orderbook {
     @Override
     public TradeExecution runAuctionAlgorithm() {
         if (currentState != OPEN_AUCTION_RUN && currentState != CLOSING_AUCTION_RUN) {
-            LOGGER.error("Attemped auction run triggered in {} event to current state {}. Required state is {}/{} ", getOrderbookId(), currentState, OPEN_AUCTION_RUN, CLOSING_AUCTION_RUN);
+            LOGGER.error("Attempted auction run triggered in {} event to current state {}. Required state is {}/{} ", getOrderbookId(), currentState, OPEN_AUCTION_RUN, CLOSING_AUCTION_RUN);
             return null;
         }
 

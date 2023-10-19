@@ -5,7 +5,6 @@ import com.herron.exchange.common.api.common.api.trading.orders.Order;
 import com.herron.exchange.common.api.common.api.trading.statechange.StateChange;
 import com.herron.exchange.common.api.common.api.trading.trades.Trade;
 import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
-import com.herron.exchange.common.api.common.comparator.EventComparator;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
@@ -17,10 +16,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
+import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.CLOSING_AUCTION_RUN;
+import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.OPEN_AUCTION_RUN;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
 
 public class MatchingEngine {
@@ -95,6 +98,9 @@ public class MatchingEngine {
 
         } else if (orderbookEvent instanceof Order order) {
             updateOrderbook(order);
+
+        } else {
+            LOGGER.error("Unhandled orderbook event {}", orderbookEvent);
         }
     }
 
@@ -117,6 +123,8 @@ public class MatchingEngine {
             var postMatchBestBidOrder = orderbook.getBidOrderIfPriceDoesNotMatch(preMatchBidPrice);
             broadcastTopOfBook(postMatchBestAskOrder);
             broadcastTopOfBook(postMatchBestBidOrder);
+        } else {
+            LOGGER.error("Could not update orderbook {}", order);
         }
 
     }
@@ -133,12 +141,12 @@ public class MatchingEngine {
 
             if (stateChange.tradeState() == OPEN_AUCTION_RUN) {
                 runAuction(orderbook);
-                orderbook.updateState(CONTINUOUS_TRADING);
 
             } else if (stateChange.tradeState() == CLOSING_AUCTION_RUN) {
                 runAuction(orderbook);
-                orderbook.updateState(POST_TRADE);
             }
+        } else {
+            LOGGER.error("Could not update orderbook {}", stateChange);
         }
     }
 

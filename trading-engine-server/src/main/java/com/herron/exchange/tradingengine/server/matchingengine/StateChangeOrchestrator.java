@@ -60,6 +60,11 @@ public class StateChangeOrchestrator {
             scheduleClosed(orderbookData);
         }
 
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException ignore) {
+            //Ignore
+        }
         var count = stateChangeInitializedLatch.getCount();
         stateChangeInitializedLatch.countDown();
         LOGGER.info("Done consuming scheduling state changes, countdown latch from {} to {}.", count, stateChangeInitializedLatch.getCount());
@@ -119,7 +124,7 @@ public class StateChangeOrchestrator {
         if (tradingHours == null) {
             return;
         }
-        var triggerTime = orderbookData.tradingCalendar().openAuctionTradingHours().start();
+        var triggerTime = orderbookData.tradingCalendar().closeAuctionTradingHours().start();
         scheduleStateChange(
                 calculateInitialDelay(triggerTime),
                 orderbookData.orderbookId(),
@@ -151,7 +156,7 @@ public class StateChangeOrchestrator {
         if (tradingHours == null) {
             return;
         }
-        var triggerTime = orderbookData.tradingCalendar().openAuctionTradingHours().start();
+        var triggerTime = orderbookData.tradingCalendar().postTradingHours().start();
         scheduleStateChange(
                 calculateInitialDelay(triggerTime),
                 orderbookData.orderbookId(),
@@ -164,7 +169,7 @@ public class StateChangeOrchestrator {
         if (tradingHours == null) {
             return;
         }
-        var triggerTime = orderbookData.tradingCalendar().openAuctionTradingHours().start();
+        var triggerTime = orderbookData.tradingCalendar().closedTradingHours().start();
         scheduleStateChange(
                 calculateInitialDelay(triggerTime),
                 orderbookData.orderbookId(),
