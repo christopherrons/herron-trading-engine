@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Trading Engine Server" type="Application" factoryName="Application" singleton="true">
+    <option name="MAIN_CLASS_NAME" value="com.herron.exchange.tradingengine.server.TradingEngineApplication" />
+    <module name="trading-engine.trading-engine-server.main" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/herron-trading-engine/trading-engine-deploy" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
