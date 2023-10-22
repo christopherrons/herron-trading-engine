@@ -1,10 +1,10 @@
 package com.herron.exchange.tradingengine.server;
 
+import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
-import com.herron.exchange.common.api.common.api.trading.statechange.StateChange;
 import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
+import com.herron.exchange.common.api.common.messages.trading.StateChange;
 import com.herron.exchange.tradingengine.server.matchingengine.MatchingEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

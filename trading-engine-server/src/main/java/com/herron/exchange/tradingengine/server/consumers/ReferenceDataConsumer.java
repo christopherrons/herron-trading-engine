@@ -2,15 +2,15 @@ package com.herron.exchange.tradingengine.server.consumers;
 
 import com.herron.exchange.common.api.common.api.Message;
 import com.herron.exchange.common.api.common.api.MessageFactory;
-import com.herron.exchange.common.api.common.api.broadcasts.DataStreamState;
-import com.herron.exchange.common.api.common.api.referencedata.exchange.Market;
-import com.herron.exchange.common.api.common.api.referencedata.exchange.Product;
 import com.herron.exchange.common.api.common.api.referencedata.instruments.Instrument;
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
 import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaDataConsumer;
+import com.herron.exchange.common.api.common.messages.common.DataStreamState;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
+import com.herron.exchange.common.api.common.messages.refdata.Market;
+import com.herron.exchange.common.api.common.messages.refdata.Product;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

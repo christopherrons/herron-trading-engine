@@ -1,24 +1,25 @@
 package com.herron.exchange.tradingengine.server.matchingengine.utils;
 
 
+import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
-import com.herron.exchange.common.api.common.api.trading.trades.Trade;
 import com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.OrderSideEnum;
 import com.herron.exchange.common.api.common.messages.common.Participant;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.common.api.common.messages.common.Volume;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultLimitOrder;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultMarketOrder;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultTrade;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableLimitOrder;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableMarketOrder;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableTrade;
+import com.herron.exchange.common.api.common.messages.trading.Trade;
 
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
 import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.*;
 import static com.herron.exchange.common.api.common.enums.OrderTypeEnum.MARKET;
 
@@ -51,7 +52,7 @@ public class MatchingEngineUtils {
         } else {
             isBidSideAggressor = bidOrder.timeOfEventMs() >= askOrder.timeOfEventMs();
         }
-        return ImmutableDefaultTrade.builder()
+        return ImmutableTrade.builder()
                 .bidParticipant(bidOrder.participant())
                 .askParticipant(askOrder.participant())
                 .tradeId(String.valueOf(CURRENT_TRADE_ID.getAndIncrement()))
@@ -63,40 +64,45 @@ public class MatchingEngineUtils {
                 .timeOfEventMs(Instant.now().toEpochMilli())
                 .instrumentId(bidOrder.instrumentId())
                 .orderbookId(bidOrder.orderbookId())
+                .eventType(SYSTEM)
                 .build();
     }
 
     public static Order buildUpdateOrder(Order order, Volume tradeVolume, OrderOperationCauseEnum orderOperationCauseEnum) {
         if (order.orderType() == MARKET) {
-            return ImmutableDefaultMarketOrder.builder()
+            return ImmutableMarketOrder.builder()
                     .from(order)
                     .orderOperationCause(orderOperationCauseEnum)
                     .currentVolume(order.currentVolume().subtract(tradeVolume))
                     .orderOperation(OrderOperationEnum.UPDATE)
+                    .eventType(SYSTEM)
                     .build();
         }
-        return ImmutableDefaultLimitOrder.builder()
+        return ImmutableLimitOrder.builder()
                 .from(order)
                 .orderOperationCause(orderOperationCauseEnum)
                 .currentVolume(order.currentVolume().subtract(tradeVolume))
                 .orderOperation(OrderOperationEnum.UPDATE)
+                .eventType(SYSTEM)
                 .build();
     }
 
     public static Order buildCancelOrder(Order order, OrderOperationCauseEnum orderOperationCauseEnum) {
         if (order.orderType() == MARKET) {
-            return ImmutableDefaultMarketOrder.builder()
+            return ImmutableMarketOrder.builder()
                     .from(order)
                     .orderOperationCause(orderOperationCauseEnum)
                     .currentVolume(orderOperationCauseEnum == FILLED ? Volume.ZERO : order.currentVolume())
                     .orderOperation(OrderOperationEnum.CANCEL)
+                    .eventType(SYSTEM)
                     .build();
         }
-        return ImmutableDefaultLimitOrder.builder()
+        return ImmutableLimitOrder.builder()
                 .from(order)
                 .orderOperationCause(orderOperationCauseEnum)
                 .currentVolume(orderOperationCauseEnum == FILLED ? Volume.ZERO : order.currentVolume())
                 .orderOperation(OrderOperationEnum.CANCEL)
+                .eventType(SYSTEM)
                 .build();
     }
 

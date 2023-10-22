@@ -1,6 +1,6 @@
 package com.herron.exchange.tradingengine.server.matchingengine.orderbook;
 
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
+import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.enums.OrderSideEnum;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;

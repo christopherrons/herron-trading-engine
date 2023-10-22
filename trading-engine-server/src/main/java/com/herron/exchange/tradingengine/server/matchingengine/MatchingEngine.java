@@ -1,14 +1,14 @@
 package com.herron.exchange.tradingengine.server.matchingengine;
 
+import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
-import com.herron.exchange.common.api.common.api.trading.statechange.StateChange;
-import com.herron.exchange.common.api.common.api.trading.trades.Trade;
-import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultPriceQuote;
+import com.herron.exchange.common.api.common.messages.trading.ImmutablePriceQuote;
+import com.herron.exchange.common.api.common.messages.trading.StateChange;
+import com.herron.exchange.common.api.common.messages.trading.Trade;
+import com.herron.exchange.common.api.common.messages.trading.TradeExecution;
 import com.herron.exchange.common.api.common.wrappers.ThreadWrapper;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.cache.OrderbookCache;
@@ -167,7 +167,7 @@ public class MatchingEngine {
         }
         broadcast(
                 TOP_OF_BOOK_DATA_KEY,
-                ImmutableDefaultPriceQuote.builder()
+                ImmutablePriceQuote.builder()
                         .orderbookId(order.orderbookId())
                         .timeOfEventMs(Instant.now().toEpochMilli())
                         .side(order.orderSide())

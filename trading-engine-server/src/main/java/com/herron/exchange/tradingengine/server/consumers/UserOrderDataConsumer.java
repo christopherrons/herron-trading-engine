@@ -1,12 +1,12 @@
 package com.herron.exchange.tradingengine.server.consumers;
 
 import com.herron.exchange.common.api.common.api.MessageFactory;
-import com.herron.exchange.common.api.common.api.broadcasts.BroadcastMessage;
-import com.herron.exchange.common.api.common.api.broadcasts.DataStreamState;
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
+import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.enums.DataStreamEnum;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaDataConsumer;
+import com.herron.exchange.common.api.common.messages.BroadcastMessage;
+import com.herron.exchange.common.api.common.messages.common.DataStreamState;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.apache.kafka.clients.consumer.ConsumerRecord;

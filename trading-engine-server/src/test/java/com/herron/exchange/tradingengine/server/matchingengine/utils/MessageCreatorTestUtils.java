@@ -1,18 +1,20 @@
 package com.herron.exchange.tradingengine.server.matchingengine.utils;
 
 
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
-import com.herron.exchange.common.api.common.api.trading.trades.Trade;
+import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.enums.OrderSideEnum;
 import com.herron.exchange.common.api.common.enums.OrderTypeEnum;
 import com.herron.exchange.common.api.common.enums.TimeInForceEnum;
 import com.herron.exchange.common.api.common.messages.common.*;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultLimitOrder;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultMarketOrder;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultTrade;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableLimitOrder;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableMarketOrder;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableTrade;
+import com.herron.exchange.common.api.common.messages.trading.Trade;
 
 import java.time.Instant;
 
+import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
+import static com.herron.exchange.common.api.common.enums.EventType.USER;
 import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.*;
 import static com.herron.exchange.common.api.common.enums.OrderOperationEnum.*;
 import static com.herron.exchange.common.api.common.enums.OrderTypeEnum.MARKET;
@@ -27,7 +29,7 @@ public class MessageCreatorTestUtils {
                                          double volume,
                                          OrderSideEnum orderSideEnum,
                                          String orderId) {
-        return ImmutableDefaultLimitOrder.builder()
+        return ImmutableLimitOrder.builder()
                 .participant(PARTICIPANT)
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -40,6 +42,7 @@ public class MessageCreatorTestUtils {
                 .timeInForce(SESSION)
                 .orderOperation(UPDATE)
                 .orderOperationCause(EXTERNAL_UPDATE)
+                .eventType(USER)
                 .build();
     }
 
@@ -48,7 +51,7 @@ public class MessageCreatorTestUtils {
                                          double volume,
                                          OrderSideEnum orderSideEnum,
                                          String orderId) {
-        return ImmutableDefaultLimitOrder.builder()
+        return ImmutableLimitOrder.builder()
                 .participant(PARTICIPANT)
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -61,6 +64,7 @@ public class MessageCreatorTestUtils {
                 .timeInForce(SESSION)
                 .orderOperationCause(FILLED)
                 .orderOperation(CANCEL)
+                .eventType(USER)
                 .build();
     }
 
@@ -70,7 +74,7 @@ public class MessageCreatorTestUtils {
                                       OrderSideEnum orderSideEnum,
                                       String orderId,
                                       Participant participant) {
-        return ImmutableDefaultLimitOrder.builder()
+        return ImmutableLimitOrder.builder()
                 .participant(participant)
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -83,6 +87,7 @@ public class MessageCreatorTestUtils {
                 .timeInForce(SESSION)
                 .orderOperation(INSERT)
                 .orderOperationCause(NEW_ORDER)
+                .eventType(USER)
                 .build();
     }
 
@@ -94,7 +99,7 @@ public class MessageCreatorTestUtils {
                                       TimeInForceEnum timeInForceEnum,
                                       OrderTypeEnum orderTypeEnum) {
         if (orderTypeEnum == MARKET) {
-            return ImmutableDefaultMarketOrder.builder()
+            return ImmutableMarketOrder.builder()
                     .participant(new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString())))
                     .orderId(orderId)
                     .orderSide(orderSideEnum)
@@ -105,9 +110,10 @@ public class MessageCreatorTestUtils {
                     .orderbookId("orderbookId")
                     .orderOperationCause(NEW_ORDER)
                     .orderOperation(INSERT)
+                    .eventType(USER)
                     .build();
         }
-        return ImmutableDefaultLimitOrder.builder()
+        return ImmutableLimitOrder.builder()
                 .participant(new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString())))
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -120,6 +126,7 @@ public class MessageCreatorTestUtils {
                 .timeInForce(timeInForceEnum)
                 .orderOperationCause(NEW_ORDER)
                 .orderOperation(INSERT)
+                .eventType(USER)
                 .build();
     }
 
@@ -128,7 +135,7 @@ public class MessageCreatorTestUtils {
                                       double volume,
                                       OrderSideEnum orderSideEnum,
                                       String orderId) {
-        return ImmutableDefaultLimitOrder.builder()
+        return ImmutableLimitOrder.builder()
                 .participant(new Participant(new Member(Instant.now().toString()), new User(Instant.now().toString())))
                 .orderId(orderId)
                 .orderSide(orderSideEnum)
@@ -141,6 +148,7 @@ public class MessageCreatorTestUtils {
                 .timeInForce(SESSION)
                 .orderOperationCause(NEW_ORDER)
                 .orderOperation(INSERT)
+                .eventType(SYSTEM)
                 .build();
     }
 
@@ -151,7 +159,7 @@ public class MessageCreatorTestUtils {
                                    String tradeId,
                                    Participant bidParticipant,
                                    Participant askParticipant) {
-        return ImmutableDefaultTrade.builder()
+        return ImmutableTrade.builder()
                 .bidParticipant(bidParticipant)
                 .askParticipant(askParticipant)
                 .tradeId(tradeId)
@@ -163,6 +171,7 @@ public class MessageCreatorTestUtils {
                 .timeOfEventMs(Instant.now().toEpochMilli())
                 .instrumentId("instrumentId")
                 .orderbookId("orderbookId")
+                .eventType(SYSTEM)
                 .build();
     }
 }

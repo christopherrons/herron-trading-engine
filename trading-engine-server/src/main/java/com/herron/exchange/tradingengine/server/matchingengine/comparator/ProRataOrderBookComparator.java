@@ -1,7 +1,7 @@
 package com.herron.exchange.tradingengine.server.matchingengine.comparator;
 
 
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
+import com.herron.exchange.common.api.common.api.trading.Order;
 
 import java.util.Comparator;
 

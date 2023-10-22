@@ -1,10 +1,10 @@
 package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
-import com.herron.exchange.common.api.common.api.trading.statechange.StateChange;
 import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
 import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultStateChange;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableStateChange;
+import com.herron.exchange.common.api.common.messages.trading.StateChange;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -206,7 +206,7 @@ public class StateChangeOrchestrator {
         int nano = now.getNano();
 
         long combinedTimestamp = epochMilli + (nano / 1_000_000);
-        return ImmutableDefaultStateChange.builder()
+        return ImmutableStateChange.builder()
                 .timeOfEventMs(combinedTimestamp + eventsAtSameMilli)
                 .tradeState(tradingState)
                 .orderbookId(orderbookId)

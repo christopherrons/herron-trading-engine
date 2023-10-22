@@ -1,15 +1,15 @@
 package com.herron.exchange.tradingengine.server.matchingengine.orderbook;
 
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
+import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
-import com.herron.exchange.common.api.common.api.trading.trades.TradeExecution;
 import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.common.api.common.messages.common.Volume;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableDefaultTradeExecution;
+import com.herron.exchange.common.api.common.messages.trading.ImmutableTradeExecution;
+import com.herron.exchange.common.api.common.messages.trading.TradeExecution;
 import com.herron.exchange.tradingengine.server.matchingengine.api.AuctionAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
 
 
@@ -45,7 +46,7 @@ public class OrderbookImpl implements Orderbook {
     @Override
     public synchronized boolean updateOrderbook(Order order) {
         if (!isAccepting()) {
-            LOGGER.error("Is not accepting {}.",currentState);
+            LOGGER.error("Is not accepting {}.", currentState);
             return false;
         }
         if (order.isActiveOrder()) {
@@ -246,10 +247,11 @@ public class OrderbookImpl implements Orderbook {
             }
         } while (!matchingEvents.isEmpty() && updatedMatchingOrder.orderOperation() != OrderOperationEnum.CANCEL);
 
-        return ImmutableDefaultTradeExecution.builder()
+        return ImmutableTradeExecution.builder()
                 .timeOfEventMs(Instant.now().toEpochMilli())
                 .messages(events)
                 .orderbookId(getOrderbookId())
+                .eventType(SYSTEM)
                 .build();
     }
 
@@ -276,10 +278,11 @@ public class OrderbookImpl implements Orderbook {
             }
         } while (!matchingEvents.isEmpty());
 
-        return ImmutableDefaultTradeExecution.builder()
+        return ImmutableTradeExecution.builder()
                 .timeOfEventMs(Instant.now().toEpochMilli())
                 .messages(events)
                 .orderbookId(getOrderbookId())
+                .eventType(SYSTEM)
                 .build();
     }
 

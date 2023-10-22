@@ -2,19 +2,16 @@ package com.herron.exchange.tradingengine.server.matchingengine.model;
 
 
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
+import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
-import com.herron.exchange.common.api.common.api.trading.orders.Order;
-import com.herron.exchange.common.api.common.api.trading.trades.Trade;
 import com.herron.exchange.common.api.common.enums.TimeInForceEnum;
-import com.herron.exchange.common.api.common.messages.common.DefaultBusinessCalendar;
+import com.herron.exchange.common.api.common.messages.common.BusinessCalendar;
 import com.herron.exchange.common.api.common.messages.common.Member;
 import com.herron.exchange.common.api.common.messages.common.Participant;
 import com.herron.exchange.common.api.common.messages.common.User;
-import com.herron.exchange.common.api.common.messages.refdata.ImmutableDefaultEquityInstrument;
-import com.herron.exchange.common.api.common.messages.refdata.ImmutableDefaultMarket;
-import com.herron.exchange.common.api.common.messages.refdata.ImmutableDefaultOrderbookData;
-import com.herron.exchange.common.api.common.messages.refdata.ImmutableDefaultProduct;
-import com.herron.exchange.common.api.common.messages.trading.DefaultTradingCalendar;
+import com.herron.exchange.common.api.common.messages.refdata.*;
+import com.herron.exchange.common.api.common.messages.trading.Trade;
+import com.herron.exchange.common.api.common.messages.trading.TradingCalendar;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import com.herron.exchange.tradingengine.server.matchingengine.factory.OrderbookFactory;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,12 +49,13 @@ class ProRataMatchingAlgorithmTest {
                 .tradingCurrency("eur")
                 .minTradeVolume(0)
                 .auctionAlgorithm(DUTCH)
-                .tradingCalendar(DefaultTradingCalendar.twentyFourSevenTradingCalendar())
+                .tradingCalendar(TradingCalendar.twentyFourSevenTradingCalendar())
                 .instrument(ImmutableDefaultEquityInstrument.builder()
                         .instrumentId("instrumendId")
                         .firstTradingDate(LocalDate.MIN)
                         .lastTradingDate(LocalDate.MAX)
-                        .product(ImmutableDefaultProduct.builder().currency("eur").productId("product").market(ImmutableDefaultMarket.builder().marketId("market").businessCalendar(DefaultBusinessCalendar.defaultWeekendCalendar()).build()).build())
+                        .product(ImmutableProduct.builder().currency("eur").productId("product").market(ImmutableMarket.builder().marketId("market").businessCalendar(BusinessCalendar.defaultWeekendCalendar()).build()).build())
+                        .priceModelParameters(ImmutableIntangiblePriceModelParameters.builder().build())
                         .build())
                 .build();
         this.orderbook = OrderbookFactory.createOrderbook(orderbookData);
