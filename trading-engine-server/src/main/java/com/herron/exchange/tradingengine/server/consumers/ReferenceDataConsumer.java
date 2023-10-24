@@ -12,8 +12,6 @@ import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.common.api.common.messages.refdata.Market;
 import com.herron.exchange.common.api.common.messages.refdata.Product;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.PartitionOffset;
 import org.springframework.kafka.annotation.TopicPartition;
@@ -22,7 +20,6 @@ import java.util.concurrent.CountDownLatch;
 
 
 public class ReferenceDataConsumer extends KafkaDataConsumer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(ReferenceDataConsumer.class);
     private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.REFERENCE_DATA, 0);
     private final CountDownLatch countDownLatch;
 
@@ -58,11 +55,11 @@ public class ReferenceDataConsumer extends KafkaDataConsumer {
 
         } else if (message instanceof DataStreamState state) {
             switch (state.state()) {
-                case START -> LOGGER.info("Started consuming reference data.");
+                case START -> logger.info("Started consuming reference data.");
                 case DONE -> {
                     var count = countDownLatch.getCount();
                     countDownLatch.countDown();
-                    LOGGER.info("Done consuming {} reference data, countdown latch from {} to {}.", getTotalNumberOfEvents(), count, countDownLatch.getCount());
+                    logger.info("Done consuming {} reference data, countdown latch from {} to {}.", getTotalNumberOfEvents(), count, countDownLatch.getCount());
                 }
             }
         }

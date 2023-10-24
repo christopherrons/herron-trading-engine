@@ -10,8 +10,6 @@ import com.herron.exchange.common.api.common.messages.common.DataStreamState;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.annotation.PartitionOffset;
 import org.springframework.kafka.annotation.TopicPartition;
@@ -20,7 +18,6 @@ import java.util.Map;
 
 
 public class UserOrderDataConsumer extends KafkaDataConsumer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(UserOrderDataConsumer.class);
     private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0);
     private static final PartitionKey PARTITION_ONE_KEY = new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 1);
     private final TradingEngine tradingEngine;
@@ -63,16 +60,16 @@ public class UserOrderDataConsumer extends KafkaDataConsumer {
                 tradingEngine.queueOrder(order);
             } else if (broadcastMessage.message() instanceof DataStreamState state) {
                 if (state.state() == DataStreamEnum.DONE) {
-                    LOGGER.info("Done consuming order stream");
+                    logger.info("Done consuming order stream");
                 } else {
-                    LOGGER.info("Started consuming order stream");
+                    logger.info("Started consuming order stream");
                 }
 
             } else {
-                LOGGER.warn("Unexpected message type {}.", broadcastMessage);
+                logger.warn("Unexpected message type {}.", broadcastMessage);
             }
         } catch (Exception e) {
-            LOGGER.warn("Unhandled exception for message {}.", broadcastMessage, e);
+            logger.warn("Unhandled exception for message {}.", broadcastMessage, e);
         }
     }
 

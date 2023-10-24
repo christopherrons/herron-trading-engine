@@ -16,10 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.Instant;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.CLOSING_AUCTION_RUN;
@@ -34,20 +31,20 @@ public class MatchingEngine {
     //private final BlockingQueue<OrderbookEvent> eventQueue = new PriorityBlockingQueue<>(50, new EventComparator<>());
     private final BlockingQueue<OrderbookEvent> eventQueue = new LinkedBlockingDeque<>();
     private final OrderbookCache orderbookCache = new OrderbookCache();
-    private final Thread pollThread;
+    private final ExecutorService service;
     private final ScheduledExecutorService queueLoggerThread;
     private final AtomicBoolean isMatching = new AtomicBoolean(false);
     private final KafkaBroadcastHandler broadcastHandler;
 
     public MatchingEngine(String id, KafkaBroadcastHandler broadcastHandler) {
         this.broadcastHandler = broadcastHandler;
-        pollThread = new Thread(this::runMatching, id);
+        service = Executors.newSingleThreadExecutor(new ThreadWrapper(id));
         queueLoggerThread = newScheduledThreadPool(1, new ThreadWrapper(id));
     }
 
     public void init() {
         isMatching.set(true);
-        pollThread.start();
+        service.execute(this::runMatching);
         queueLoggerThread.scheduleAtFixedRate(() -> LOGGER.info("Message Queue size: {}", eventQueue.size()), 0, 60, TimeUnit.SECONDS);
     }
 
