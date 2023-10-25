@@ -11,21 +11,17 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 
 public class TradingEngine {
     private static final Logger LOGGER = LoggerFactory.getLogger(TradingEngine.class);
     private final Map<String, MatchingEngine> partitionKeyToMatchingEngine = new ConcurrentHashMap<>();
     private final KafkaBroadcastHandler broadcastHandler;
-    private final CountDownLatch stateChangeInitializedLatch;
 
-    public TradingEngine(KafkaBroadcastHandler broadcastHandler, CountDownLatch stateChangeInitializedLatch) {
+    public TradingEngine(KafkaBroadcastHandler broadcastHandler) {
         this.broadcastHandler = broadcastHandler;
-        this.stateChangeInitializedLatch = stateChangeInitializedLatch;
     }
 
-    public void queueOrder(Order order) throws InterruptedException {
-        stateChangeInitializedLatch.await();
+    public void queueOrder(Order order) {
         queueMessage(order);
     }
 
@@ -34,7 +30,7 @@ public class TradingEngine {
     }
 
     private void queueMessage(OrderbookEvent orderbookEvent) {
-        var id = ReferenceDataCache.getCache().getOrderbookData(orderbookEvent.orderbookId()).instrument().product().productId();
+        var id = ReferenceDataCache.getCache().getOrderbookData(orderbookEvent.orderbookId()).instrument().product().productName();
         partitionKeyToMatchingEngine.computeIfAbsent(id, key -> {
                     var matchingEngine = new MatchingEngine(key, broadcastHandler);
                     matchingEngine.init();

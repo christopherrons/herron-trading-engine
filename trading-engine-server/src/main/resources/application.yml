@@ -1,21 +1,39 @@
 server:
   port: 8084
 
-spring:
-  kafka:
-    bootstrap-servers: "localhost:9092"
-    producer:
-      properties:
-        max-request-size: 20000000
-
 kafka:
-  topic:
-    audit-trail:
-      nr-of-partitions: 1
-      max-message-bytes: 20000000
-    trade-data:
-      nr-of-partitions: 1
-      max-message-bytes: 20000000
-    top-of-book:
-      nr-of-partitions: 1
-      max-message-bytes: 20000000
+  bootstrap-servers: "localhost:9092"
+  producer:
+    properties:
+      max-request-size: 20000000
+    topic:
+      audit-trail:
+        nr-of-partitions: 1
+        max-message-bytes: 20000000
+      trade-data:
+        nr-of-partitions: 1
+        max-message-bytes: 20000000
+      top-of-book-quote:
+        nr-of-partitions: 1
+        max-message-bytes: 20000000
+    broadcast:
+      config:
+        - partition: 0
+          event-logging: 100000
+          topic: "audit-trail"
+        - partition: 0
+          event-logging: 50000
+          topic: "trade-data"
+        - partition: 0
+          event-logging: 50000
+          topic: "top-of-book-quote"
+  consumer:
+    config:
+      - offset: 0
+        partition: 0
+        event-logging: 100000
+        topic: "user-order-data"
+      - offset: 0
+        partition: 0
+        event-logging: 1000
+        topic: "reference-data"

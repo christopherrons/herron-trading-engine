@@ -1,76 +1,55 @@
 package com.herron.exchange.tradingengine.server.consumers;
 
-import com.herron.exchange.common.api.common.api.MessageFactory;
+import com.herron.exchange.common.api.common.api.Message;
+import com.herron.exchange.common.api.common.api.kafka.KafkaMessageHandler;
 import com.herron.exchange.common.api.common.api.trading.Order;
-import com.herron.exchange.common.api.common.enums.DataStreamEnum;
-import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
-import com.herron.exchange.common.api.common.kafka.KafkaDataConsumer;
+import com.herron.exchange.common.api.common.consumer.DataConsumer;
+import com.herron.exchange.common.api.common.kafka.KafkaConsumerClient;
+import com.herron.exchange.common.api.common.kafka.model.KafkaSubscriptionDetails;
+import com.herron.exchange.common.api.common.kafka.model.KafkaSubscriptionRequest;
 import com.herron.exchange.common.api.common.messages.BroadcastMessage;
 import com.herron.exchange.common.api.common.messages.common.DataStreamState;
-import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.tradingengine.server.TradingEngine;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.annotation.PartitionOffset;
-import org.springframework.kafka.annotation.TopicPartition;
 
-import java.util.Map;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 
-public class UserOrderDataConsumer extends KafkaDataConsumer {
-    private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 0);
-    private static final PartitionKey PARTITION_ONE_KEY = new PartitionKey(KafkaTopicEnum.USER_ORDER_DATA, 1);
+public class UserOrderDataConsumer extends DataConsumer implements KafkaMessageHandler {
     private final TradingEngine tradingEngine;
+    private final KafkaConsumerClient consumerClient;
+    private final List<KafkaSubscriptionRequest> requests;
 
-    public UserOrderDataConsumer(TradingEngine tradingEngine,
-                                 MessageFactory messageFactory,
-                                 Map<PartitionKey, Integer> keyToMessageUpdateInterval) {
-        super(messageFactory, keyToMessageUpdateInterval);
+    public UserOrderDataConsumer(TradingEngine tradingEngine, KafkaConsumerClient consumerClient, List<KafkaSubscriptionDetails> subscriptionDetails) {
+        super("User-Order-Data", new CountDownLatch(subscriptionDetails.size()));
         this.tradingEngine = tradingEngine;
+        this.consumerClient = consumerClient;
+        this.requests = subscriptionDetails.stream().map(d -> new KafkaSubscriptionRequest(d, this)).toList();
     }
 
-    @KafkaListener(
-            id = "trading-engine-user-order-data-0",
-            topicPartitions = {
-                    @TopicPartition(topic = "user-order-data", partitionOffsets = @PartitionOffset(partition = "0", initialOffset = "0"))
-            }
-    )
-    public void consumeOrderDataPartitionOne(ConsumerRecord<String, String> consumerRecord) {
-        var broadcastMessage = deserializeBroadcast(consumerRecord, PARTITION_ZERO_KEY);
-        queueMessage(broadcastMessage);
+    @Override
+    protected void consumerInit() {
+        requests.forEach(consumerClient::subscribeToBroadcastTopic);
     }
 
-    @KafkaListener(
-            id = "order-data-consumer-two",
-            topicPartitions = {
-                    @TopicPartition(topic = "user-order-data", partitionOffsets = @PartitionOffset(partition = "1", initialOffset = "0"))
-            }
-    )
-    public void consumeOrderDataPartitionTwo(ConsumerRecord<String, String> consumerRecord) {
-        var broadcastMessage = deserializeBroadcast(consumerRecord, PARTITION_ONE_KEY);
-        queueMessage(broadcastMessage);
-    }
+    @Override
+    public void onMessage(BroadcastMessage broadcastMessage) {
+        Message message = broadcastMessage.message();
 
-    private void queueMessage(BroadcastMessage broadcastMessage) {
-        if (broadcastMessage == null) {
-            return;
-        }
-        try {
-            if (broadcastMessage.message() instanceof Order order) {
-                tradingEngine.queueOrder(order);
-            } else if (broadcastMessage.message() instanceof DataStreamState state) {
-                if (state.state() == DataStreamEnum.DONE) {
-                    logger.info("Done consuming order stream");
-                } else {
-                    logger.info("Started consuming order stream");
+        if (broadcastMessage.message() instanceof Order order) {
+            tradingEngine.queueOrder(order);
+
+        } else if (message instanceof DataStreamState state) {
+            switch (state.state()) {
+                case START -> logger.info("Started user order data.");
+                case DONE -> {
+                    consumerClient.stop(broadcastMessage.partitionKey());
+                    countDownLatch.countDown();
+                    if (countDownLatch.getCount() == 0) {
+                        consumerComplete();
+                    }
                 }
-
-            } else {
-                logger.warn("Unexpected message type {}.", broadcastMessage);
             }
-        } catch (Exception e) {
-            logger.warn("Unhandled exception for message {}.", broadcastMessage, e);
         }
     }
-
 }

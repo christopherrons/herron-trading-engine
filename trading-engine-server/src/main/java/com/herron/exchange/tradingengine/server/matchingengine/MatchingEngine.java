@@ -2,6 +2,7 @@ package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
+import com.herron.exchange.common.api.common.enums.EventType;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.CLOSING_AUCTION_RUN;
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.OPEN_AUCTION_RUN;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
@@ -169,6 +171,7 @@ public class MatchingEngine {
                         .timeOfEventMs(Instant.now().toEpochMilli())
                         .side(order.orderSide())
                         .price(order.price())
+                        .eventType(SYSTEM)
                         .build()
         );
     }

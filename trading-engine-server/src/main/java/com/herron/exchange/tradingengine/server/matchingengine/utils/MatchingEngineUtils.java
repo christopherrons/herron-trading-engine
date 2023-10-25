@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
 import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnum.*;
 import static com.herron.exchange.common.api.common.enums.OrderTypeEnum.MARKET;
+import static com.herron.exchange.common.api.common.enums.TradeType.AUTOMATCH;
 
 public class MatchingEngineUtils {
     private static final AtomicLong CURRENT_TRADE_ID = new AtomicLong(1);
@@ -65,6 +66,7 @@ public class MatchingEngineUtils {
                 .instrumentId(bidOrder.instrumentId())
                 .orderbookId(bidOrder.orderbookId())
                 .eventType(SYSTEM)
+                .tradeType(AUTOMATCH)
                 .build();
     }
 

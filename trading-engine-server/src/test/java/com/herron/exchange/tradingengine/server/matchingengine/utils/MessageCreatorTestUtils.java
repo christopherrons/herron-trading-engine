@@ -19,6 +19,7 @@ import static com.herron.exchange.common.api.common.enums.OrderOperationCauseEnu
 import static com.herron.exchange.common.api.common.enums.OrderOperationEnum.*;
 import static com.herron.exchange.common.api.common.enums.OrderTypeEnum.MARKET;
 import static com.herron.exchange.common.api.common.enums.TimeInForceEnum.SESSION;
+import static com.herron.exchange.common.api.common.enums.TradeType.AUTOMATCH;
 
 
 public class MessageCreatorTestUtils {
@@ -172,6 +173,7 @@ public class MessageCreatorTestUtils {
                 .instrumentId("instrumentId")
                 .orderbookId("orderbookId")
                 .eventType(SYSTEM)
+                .tradeType(AUTOMATCH)
                 .build();
     }
 }

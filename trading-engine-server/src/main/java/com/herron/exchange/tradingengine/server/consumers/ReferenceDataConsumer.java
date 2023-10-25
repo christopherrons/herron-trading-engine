@@ -1,46 +1,41 @@
 package com.herron.exchange.tradingengine.server.consumers;
 
 import com.herron.exchange.common.api.common.api.Message;
-import com.herron.exchange.common.api.common.api.MessageFactory;
+import com.herron.exchange.common.api.common.api.kafka.KafkaMessageHandler;
 import com.herron.exchange.common.api.common.api.referencedata.instruments.Instrument;
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
 import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
-import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
-import com.herron.exchange.common.api.common.kafka.KafkaDataConsumer;
+import com.herron.exchange.common.api.common.consumer.DataConsumer;
+import com.herron.exchange.common.api.common.kafka.KafkaConsumerClient;
+import com.herron.exchange.common.api.common.kafka.model.KafkaSubscriptionDetails;
+import com.herron.exchange.common.api.common.kafka.model.KafkaSubscriptionRequest;
+import com.herron.exchange.common.api.common.messages.BroadcastMessage;
 import com.herron.exchange.common.api.common.messages.common.DataStreamState;
-import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import com.herron.exchange.common.api.common.messages.refdata.Market;
 import com.herron.exchange.common.api.common.messages.refdata.Product;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.annotation.PartitionOffset;
-import org.springframework.kafka.annotation.TopicPartition;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 
-public class ReferenceDataConsumer extends KafkaDataConsumer {
-    private static final PartitionKey PARTITION_ZERO_KEY = new PartitionKey(KafkaTopicEnum.REFERENCE_DATA, 0);
-    private final CountDownLatch countDownLatch;
+public class ReferenceDataConsumer extends DataConsumer implements KafkaMessageHandler {
+    private final KafkaConsumerClient consumerClient;
+    private final List<KafkaSubscriptionRequest> requests;
 
-    public ReferenceDataConsumer(CountDownLatch countDownLatch, MessageFactory messageFactory) {
-        super(messageFactory);
-        this.countDownLatch = countDownLatch;
+    public ReferenceDataConsumer(KafkaConsumerClient consumerClient, List<KafkaSubscriptionDetails> subscriptionDetails) {
+        super("Reference-Data", new CountDownLatch(subscriptionDetails.size()));
+        this.consumerClient = consumerClient;
+        this.requests = subscriptionDetails.stream().map(d -> new KafkaSubscriptionRequest(d, this)).toList();
     }
 
-    @KafkaListener(id = "trading-engine-reference-data-consumer-0",
-            topicPartitions = {
-                    @TopicPartition(topic = "reference-data", partitionOffsets = @PartitionOffset(partition = "0", initialOffset = "0"))
-            }
-    )
-    public void consumerReferenceDataPartitionZero(ConsumerRecord<String, String> consumerRecord) {
-        var broadCastMessage = deserializeBroadcast(consumerRecord, PARTITION_ZERO_KEY);
-        if (broadCastMessage != null) {
-            handleMessage(broadCastMessage.message());
-        }
+    @Override
+    public void consumerInit() {
+        requests.forEach(consumerClient::subscribeToBroadcastTopic);
     }
 
-    private void handleMessage(Message message) {
+    @Override
+    public void onMessage(BroadcastMessage broadcastMessage) {
+        Message message = broadcastMessage.message();
         if (message instanceof Market market) {
             ReferenceDataCache.getCache().addMarket(market);
 
@@ -57,9 +52,11 @@ public class ReferenceDataConsumer extends KafkaDataConsumer {
             switch (state.state()) {
                 case START -> logger.info("Started consuming reference data.");
                 case DONE -> {
-                    var count = countDownLatch.getCount();
+                    consumerClient.stop(broadcastMessage.partitionKey());
                     countDownLatch.countDown();
-                    logger.info("Done consuming {} reference data, countdown latch from {} to {}.", getTotalNumberOfEvents(), count, countDownLatch.getCount());
+                    if (countDownLatch.getCount() == 0) {
+                        consumerComplete();
+                    }
                 }
             }
         }

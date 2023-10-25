@@ -2,6 +2,7 @@ package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
 import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
+import com.herron.exchange.common.api.common.enums.EventType;
 import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
 import com.herron.exchange.common.api.common.messages.trading.ImmutableStateChange;
 import com.herron.exchange.common.api.common.messages.trading.StateChange;
@@ -12,43 +13,25 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalTime;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
 
 
 public class StateChangeOrchestrator {
     private static final Logger LOGGER = LoggerFactory.getLogger(StateChangeOrchestrator.class);
     private final TradingEngine tradingEngine;
-    private final CountDownLatch referenceDataLoadLatch;
-    private final CountDownLatch stateChangeInitializedLatch;
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
-    private final Thread initThread;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private long eventsAtSameMilli = 0;
 
-    public StateChangeOrchestrator(TradingEngine tradingEngine,
-                                   CountDownLatch referenceDataLoadLatch,
-                                   CountDownLatch stateChangeInitializedLatch) {
+    public StateChangeOrchestrator(TradingEngine tradingEngine) {
         this.tradingEngine = tradingEngine;
-        this.referenceDataLoadLatch = referenceDataLoadLatch;
-        this.stateChangeInitializedLatch = stateChangeInitializedLatch;
-        this.initThread = new Thread(this::scheduleStateChanges, this.getClass().getSimpleName());
     }
 
-    public void init() {
-        initThread.start();
-    }
-
-    private void scheduleStateChanges() {
-        try {
-            referenceDataLoadLatch.await();
-        } catch (InterruptedException ignore) {
-            //Ignore
-        }
-
+    public void scheduleStateChanges() {
         for (var orderbookData : ReferenceDataCache.getCache().getOrderbookData()) {
             schedulePreTrading(orderbookData);
             scheduleOpenAuctionTrading(orderbookData);
@@ -65,9 +48,7 @@ public class StateChangeOrchestrator {
         } catch (InterruptedException ignore) {
             //Ignore
         }
-        var count = stateChangeInitializedLatch.getCount();
-        stateChangeInitializedLatch.countDown();
-        LOGGER.info("Done consuming scheduling state changes, countdown latch from {} to {}.", count, stateChangeInitializedLatch.getCount());
+        LOGGER.info("Done scheduling state changes.");
     }
 
     private void schedulePreTrading(OrderbookData orderbookData) {
@@ -210,6 +191,7 @@ public class StateChangeOrchestrator {
                 .timeOfEventMs(combinedTimestamp + eventsAtSameMilli)
                 .tradeState(tradingState)
                 .orderbookId(orderbookId)
+                .eventType(SYSTEM)
                 .build();
     }
 }
