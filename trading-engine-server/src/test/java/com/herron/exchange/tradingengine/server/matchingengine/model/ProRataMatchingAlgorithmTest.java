@@ -5,10 +5,7 @@ import com.herron.exchange.common.api.common.api.referencedata.orderbook.Orderbo
 import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
 import com.herron.exchange.common.api.common.enums.TimeInForceEnum;
-import com.herron.exchange.common.api.common.messages.common.BusinessCalendar;
-import com.herron.exchange.common.api.common.messages.common.Member;
-import com.herron.exchange.common.api.common.messages.common.Participant;
-import com.herron.exchange.common.api.common.messages.common.User;
+import com.herron.exchange.common.api.common.messages.common.*;
 import com.herron.exchange.common.api.common.messages.refdata.*;
 import com.herron.exchange.common.api.common.messages.trading.Trade;
 import com.herron.exchange.common.api.common.messages.trading.TradingCalendar;
@@ -52,8 +49,8 @@ class ProRataMatchingAlgorithmTest {
                 .tradingCalendar(TradingCalendar.twentyFourSevenTradingCalendar())
                 .instrument(ImmutableDefaultEquityInstrument.builder()
                         .instrumentId("instrumendId")
-                        .firstTradingDate(LocalDate.MIN)
-                        .lastTradingDate(LocalDate.MAX)
+                        .firstTradingDate(Timestamp.from(LocalDate.MIN))
+                        .lastTradingDate(Timestamp.from(LocalDate.MAX))
                         .product(ImmutableProduct.builder().currency("eur").productId("product").market(ImmutableMarket.builder().marketId("market").businessCalendar(BusinessCalendar.defaultWeekendCalendar()).build()).build())
                         .priceModelParameters(ImmutableIntangiblePriceModelParameters.builder().build())
                         .build())

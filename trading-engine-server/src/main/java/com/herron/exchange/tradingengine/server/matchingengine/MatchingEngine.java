@@ -6,6 +6,7 @@ import com.herron.exchange.common.api.common.enums.EventType;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
+import com.herron.exchange.common.api.common.messages.common.Timestamp;
 import com.herron.exchange.common.api.common.messages.trading.ImmutablePriceQuote;
 import com.herron.exchange.common.api.common.messages.trading.StateChange;
 import com.herron.exchange.common.api.common.messages.trading.Trade;
@@ -168,7 +169,7 @@ public class MatchingEngine {
                 TOP_OF_BOOK_DATA_KEY,
                 ImmutablePriceQuote.builder()
                         .orderbookId(order.orderbookId())
-                        .timeOfEventMs(Instant.now().toEpochMilli())
+                        .timeOfEvent(Timestamp.now())
                         .side(order.orderSide())
                         .price(order.price())
                         .eventType(SYSTEM)

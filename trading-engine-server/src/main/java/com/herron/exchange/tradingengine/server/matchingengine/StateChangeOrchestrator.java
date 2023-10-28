@@ -2,8 +2,8 @@ package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.referencedata.orderbook.OrderbookData;
 import com.herron.exchange.common.api.common.cache.ReferenceDataCache;
-import com.herron.exchange.common.api.common.enums.EventType;
 import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
+import com.herron.exchange.common.api.common.messages.common.Timestamp;
 import com.herron.exchange.common.api.common.messages.trading.ImmutableStateChange;
 import com.herron.exchange.common.api.common.messages.trading.StateChange;
 import com.herron.exchange.tradingengine.server.TradingEngine;
@@ -182,13 +182,8 @@ public class StateChangeOrchestrator {
     }
 
     private StateChange createStateChange(String orderbookId, TradingStatesEnum tradingState) {
-        Instant now = Instant.now();
-        long epochMilli = now.toEpochMilli();
-        int nano = now.getNano();
-
-        long combinedTimestamp = epochMilli + (nano / 1_000_000);
         return ImmutableStateChange.builder()
-                .timeOfEventMs(combinedTimestamp + eventsAtSameMilli)
+                .timeOfEvent(Timestamp.from(Instant.now().toEpochMilli() + eventsAtSameMilli))
                 .tradeState(tradingState)
                 .orderbookId(orderbookId)
                 .eventType(SYSTEM)

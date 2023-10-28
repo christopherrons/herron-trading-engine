@@ -8,6 +8,7 @@ import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.OrderSideEnum;
 import com.herron.exchange.common.api.common.messages.common.Participant;
 import com.herron.exchange.common.api.common.messages.common.Price;
+import com.herron.exchange.common.api.common.messages.common.Timestamp;
 import com.herron.exchange.common.api.common.messages.common.Volume;
 import com.herron.exchange.common.api.common.messages.trading.ImmutableLimitOrder;
 import com.herron.exchange.common.api.common.messages.trading.ImmutableMarketOrder;
@@ -36,7 +37,7 @@ public class MatchingEngineUtils {
         } else if (askOrder.orderType() == MARKET) {
             isBidSideAggressor = false;
         } else {
-            isBidSideAggressor = bidOrder.timeOfEventMs() >= askOrder.timeOfEventMs();
+            isBidSideAggressor = bidOrder.timeOfEvent().isAfterOrAt(askOrder.timeOfEvent());
         }
         return buildTrade(bidOrder, askOrder, isBidSideAggressor ? askOrder.price() : bidOrder.price(), tradeVolume);
     }
@@ -51,7 +52,7 @@ public class MatchingEngineUtils {
         } else if (askOrder.orderType() == MARKET) {
             isBidSideAggressor = false;
         } else {
-            isBidSideAggressor = bidOrder.timeOfEventMs() >= askOrder.timeOfEventMs();
+            isBidSideAggressor = bidOrder.timeOfEvent().isAfterOrAt(askOrder.timeOfEvent());
         }
         return ImmutableTrade.builder()
                 .bidParticipant(bidOrder.participant())
@@ -62,7 +63,7 @@ public class MatchingEngineUtils {
                 .isBidSideAggressor(isBidSideAggressor)
                 .volume(tradeVolume)
                 .price(price)
-                .timeOfEventMs(Instant.now().toEpochMilli())
+                .timeOfEvent(Timestamp.now())
                 .instrumentId(bidOrder.instrumentId())
                 .orderbookId(bidOrder.orderbookId())
                 .eventType(SYSTEM)

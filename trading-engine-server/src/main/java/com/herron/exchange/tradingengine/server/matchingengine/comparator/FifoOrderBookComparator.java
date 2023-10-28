@@ -8,10 +8,10 @@ import java.util.Comparator;
 public class FifoOrderBookComparator implements Comparator<Order> {
     @Override
     public int compare(Order order, Order otherEvent) {
-        if (order.timeOfEventMs() < otherEvent.timeOfEventMs()) {
+        if (order.timeOfEvent().isBefore(otherEvent.timeOfEvent())) {
             return -1;
 
-        } else if (order.timeOfEventMs() > otherEvent.timeOfEventMs()) {
+        } else if (order.timeOfEvent().isAfter(otherEvent.timeOfEvent())) {
             return 1;
 
         } else {

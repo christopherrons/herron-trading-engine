@@ -7,6 +7,7 @@ import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.OrderOperationEnum;
 import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
+import com.herron.exchange.common.api.common.messages.common.Timestamp;
 import com.herron.exchange.common.api.common.messages.common.Volume;
 import com.herron.exchange.common.api.common.messages.trading.ImmutableTradeExecution;
 import com.herron.exchange.common.api.common.messages.trading.TradeExecution;
@@ -16,7 +17,6 @@ import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -248,7 +248,7 @@ public class OrderbookImpl implements Orderbook {
         } while (!matchingEvents.isEmpty() && updatedMatchingOrder.orderOperation() != OrderOperationEnum.CANCEL);
 
         return ImmutableTradeExecution.builder()
-                .timeOfEventMs(Instant.now().toEpochMilli())
+                .timeOfEvent(Timestamp.now())
                 .messages(events)
                 .orderbookId(getOrderbookId())
                 .eventType(SYSTEM)
@@ -279,7 +279,7 @@ public class OrderbookImpl implements Orderbook {
         } while (!matchingEvents.isEmpty());
 
         return ImmutableTradeExecution.builder()
-                .timeOfEventMs(Instant.now().toEpochMilli())
+                .timeOfEvent(Timestamp.now())
                 .messages(events)
                 .orderbookId(getOrderbookId())
                 .eventType(SYSTEM)
