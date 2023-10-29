@@ -8,8 +8,8 @@ dependencyResolutionManagement {
             library("spring.boot.starter.web", "org.springframework.boot:spring-boot-starter-web:3.0.1")
             library("spring.boot.starter.parent", "org.springframework.boot:spring-boot-starter-parent:3.0.1")
             library("spring.kafka", "org.springframework.kafka:spring-kafka:3.0.1")
-            library("common.api", "com.herron.exchange:common-api:1.0.252")
-            library("common", "com.herron.exchange:common:1.0.252")
+            library("common.api", "com.herron.exchange:common-api:1.0.260")
+            library("common", "com.herron.exchange:common:1.0.260")
         }
 
         create("testlibs") {
