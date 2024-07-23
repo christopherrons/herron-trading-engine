@@ -2,7 +2,6 @@ package com.herron.exchange.tradingengine.server.matchingengine;
 
 import com.herron.exchange.common.api.common.api.trading.Order;
 import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
-import com.herron.exchange.common.api.common.enums.EventType;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
@@ -17,7 +16,6 @@ import com.herron.exchange.tradingengine.server.matchingengine.cache.OrderbookCa
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 

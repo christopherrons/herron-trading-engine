@@ -15,7 +15,6 @@ import com.herron.exchange.common.api.common.messages.trading.ImmutableMarketOrd
 import com.herron.exchange.common.api.common.messages.trading.ImmutableTrade;
 import com.herron.exchange.common.api.common.messages.trading.Trade;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
