@@ -94,7 +94,7 @@ public class MatchingEngineUtils {
             return ImmutableMarketOrder.builder()
                     .from(order)
                     .orderOperationCause(orderOperationCauseEnum)
-                    .currentVolume(orderOperationCauseEnum == FILLED ? Volume.ZERO : order.currentVolume())
+                    .currentVolume(order.currentVolume())
                     .orderOperation(OrderOperationEnum.CANCEL)
                     .eventType(SYSTEM)
                     .build();
@@ -102,7 +102,7 @@ public class MatchingEngineUtils {
         return ImmutableLimitOrder.builder()
                 .from(order)
                 .orderOperationCause(orderOperationCauseEnum)
-                .currentVolume(orderOperationCauseEnum == FILLED ? Volume.ZERO : order.currentVolume())
+                .currentVolume(order.currentVolume())
                 .orderOperation(OrderOperationEnum.CANCEL)
                 .eventType(SYSTEM)
                 .build();

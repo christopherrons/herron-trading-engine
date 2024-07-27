@@ -94,12 +94,12 @@ public class ActiveOrders implements ActiveOrderReadOnly {
         return orderIdToOrder.get(orderId);
     }
 
-    public Price getBestBidPrice() {
-        return getBestBidOrder().map(Order::price).orElse(Price.ZERO);
+    public Optional<Price> getBestBidPrice() {
+        return getBestBidOrder().map(Order::price);
     }
 
-    public Price getBestAskPrice() {
-        return getBestAskOrder().map(Order::price).orElse(Price.ZERO);
+    public Optional<Price> getBestAskPrice() {
+        return getBestAskOrder().map(Order::price);
     }
 
     public Optional<Order> getBestBidOrder() {

@@ -92,12 +92,12 @@ public class OrderbookImpl implements Orderbook {
     }
 
     @Override
-    public Price getBestBidPrice() {
+    public Optional<Price>  getBestBidPrice() {
         return activeOrders.getBestBidPrice();
     }
 
     @Override
-    public Price getBestAskPrice() {
+    public Optional<Price> getBestAskPrice() {
         return activeOrders.getBestAskPrice();
     }
 
@@ -284,22 +284,5 @@ public class OrderbookImpl implements Orderbook {
                 .orderbookId(getOrderbookId())
                 .eventType(SYSTEM)
                 .build();
-    }
-
-    @Override
-    public Order getAskOrderIfPriceDoesNotMatch(Price preMatchAskPrice) {
-        return getPreMatchBestOrder(preMatchAskPrice, getBestAskOrder());
-    }
-
-    @Override
-    public Order getBidOrderIfPriceDoesNotMatch(Price preMatchBidPrice) {
-        return getPreMatchBestOrder(preMatchBidPrice, getBestBidOrder());
-    }
-
-    private Order getPreMatchBestOrder(Price preMatchPrice, Optional<Order> postMatchBestOrder) {
-        if (postMatchBestOrder.isPresent() && !postMatchBestOrder.get().price().equals(preMatchPrice)) {
-            return postMatchBestOrder.get();
-        }
-        return null;
     }
 }

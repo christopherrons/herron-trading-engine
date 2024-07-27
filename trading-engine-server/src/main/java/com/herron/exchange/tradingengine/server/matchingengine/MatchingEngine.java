@@ -117,10 +117,17 @@ public class MatchingEngine {
             var tradeExecution = orderbook.runMatchingAlgorithm(order);
             broadcast(tradeExecution);
 
-            var postMatchBestAskOrder = orderbook.getAskOrderIfPriceDoesNotMatch(preMatchAskPrice);
-            var postMatchBestBidOrder = orderbook.getBidOrderIfPriceDoesNotMatch(preMatchBidPrice);
-            broadcastTopOfBook(postMatchBestAskOrder);
-            broadcastTopOfBook(postMatchBestBidOrder);
+            var postMatchAskOrder = orderbook.getBestAskOrder();
+            var postMatchBidOrder = orderbook.getBestBidOrder();
+
+            if (postMatchAskOrder.isPresent() && (preMatchAskPrice.isEmpty() || postMatchAskOrder.get().price().lt(preMatchAskPrice.get()))) {
+                broadcastTopOfBook(postMatchAskOrder.get());
+            }
+
+            if (postMatchBidOrder.isPresent() && (preMatchBidPrice.isEmpty() || postMatchBidOrder.get().price().gt(preMatchBidPrice.get()))) {
+                broadcastTopOfBook(postMatchBidOrder.get());
+            }
+
         } else {
             LOGGER.error("Could not update orderbook {}", order);
         }
@@ -153,10 +160,16 @@ public class MatchingEngine {
         var tradeExecution = orderbook.runAuctionAlgorithm();
         broadcast(tradeExecution);
 
-        var postMatchBestAskOrder = orderbook.getAskOrderIfPriceDoesNotMatch(preMatchAskPrice);
-        var postMatchBestBidOrder = orderbook.getBidOrderIfPriceDoesNotMatch(preMatchBidPrice);
-        broadcastTopOfBook(postMatchBestAskOrder);
-        broadcastTopOfBook(postMatchBestBidOrder);
+        var postMatchAskOrder = orderbook.getBestAskOrder();
+        var postMatchBidOrder = orderbook.getBestBidOrder();
+
+        if (postMatchAskOrder.isPresent() && (preMatchAskPrice.isEmpty() || postMatchAskOrder.get().price().lt(preMatchAskPrice.get()))) {
+            broadcastTopOfBook(postMatchAskOrder.get());
+        }
+
+        if (postMatchBidOrder.isPresent() && (preMatchBidPrice.isEmpty() || postMatchBidOrder.get().price().gt(preMatchBidPrice.get()))) {
+            broadcastTopOfBook(postMatchBidOrder.get());
+        }
     }
 
     private void broadcastTopOfBook(Order order) {

@@ -11,10 +11,6 @@ import java.util.Optional;
 
 public interface Orderbook {
 
-    Order getAskOrderIfPriceDoesNotMatch(Price preMatchAskPrice);
-
-    Order getBidOrderIfPriceDoesNotMatch(Price preMatchBidPrice);
-
     Optional<Order> getBestBidOrder();
 
     Optional<Order> getBestAskOrder();
@@ -45,9 +41,9 @@ public interface Orderbook {
 
     Volume totalAskVolume();
 
-    Price getBestBidPrice();
+    Optional<Price> getBestBidPrice();
 
-    Price getBestAskPrice();
+    Optional<Price> getBestAskPrice();
 
     long totalNumberOfBidOrders();
 

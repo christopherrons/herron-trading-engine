@@ -87,13 +87,13 @@ class FifoMatchingAlgorithmTest {
     void test_best_price_after_insert_orders() {
         orderbook.updateOrderbook(buildOrderAdd(0, 100, 10, BID, "1"));
         orderbook.updateOrderbook(buildOrderAdd(2, 102, 10, ASK, "2"));
-        assertEquals(100, orderbook.getBestBidPrice().getRealValue());
-        assertEquals(102, orderbook.getBestAskPrice().getRealValue());
+        assertEquals(100, orderbook.getBestBidPrice().get().getRealValue());
+        assertEquals(102, orderbook.getBestAskPrice().get().getRealValue());
 
         orderbook.updateOrderbook(buildOrderAdd(0, 101, 10, BID, "3"));
         orderbook.updateOrderbook(buildOrderAdd(2, 101, 10, ASK, "3"));
-        assertEquals(101, orderbook.getBestBidPrice().getRealValue());
-        assertEquals(101, orderbook.getBestAskPrice().getRealValue());
+        assertEquals(101, orderbook.getBestBidPrice().get().getRealValue());
+        assertEquals(101, orderbook.getBestAskPrice().get().getRealValue());
     }
 
     @Test
@@ -119,13 +119,13 @@ class FifoMatchingAlgorithmTest {
         orderbook.updateOrderbook(buildOrderAdd(2, 102, 10, ASK, "2"));
         orderbook.updateOrderbook(buildOrderAdd(0, 99, 10, BID, "3"));
         orderbook.updateOrderbook(buildOrderAdd(2, 103, 10, ASK, "4"));
-        assertEquals(100, orderbook.getBestBidPrice().getRealValue());
-        assertEquals(102, orderbook.getBestAskPrice().getRealValue());
+        assertEquals(100, orderbook.getBestBidPrice().get().getRealValue());
+        assertEquals(102, orderbook.getBestAskPrice().get().getRealValue());
 
         orderbook.removeOrder("1");
         orderbook.removeOrder("2");
-        assertEquals(99, orderbook.getBestBidPrice().getRealValue());
-        assertEquals(103, orderbook.getBestAskPrice().getRealValue());
+        assertEquals(99, orderbook.getBestBidPrice().get().getRealValue());
+        assertEquals(103, orderbook.getBestAskPrice().get().getRealValue());
     }
 
     @Test
