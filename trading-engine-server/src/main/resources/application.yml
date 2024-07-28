@@ -34,6 +34,10 @@ kafka:
         event-logging: 100000
         topic: "user-order-data"
       - offset: 0
+        partition: 1
+        event-logging: 100
+        topic: "user-order-data"
+      - offset: 0
         partition: 0
         event-logging: 1000
         topic: "reference-data"
