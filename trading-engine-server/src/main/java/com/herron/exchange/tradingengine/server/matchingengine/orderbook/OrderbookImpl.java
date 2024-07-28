@@ -9,8 +9,7 @@ import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.common.api.common.messages.common.Timestamp;
 import com.herron.exchange.common.api.common.messages.common.Volume;
-import com.herron.exchange.common.api.common.messages.trading.ImmutableTradeExecution;
-import com.herron.exchange.common.api.common.messages.trading.TradeExecution;
+import com.herron.exchange.common.api.common.messages.trading.*;
 import com.herron.exchange.tradingengine.server.matchingengine.api.AuctionAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.MatchingAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.api.Orderbook;
@@ -20,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
@@ -32,6 +32,7 @@ public class OrderbookImpl implements Orderbook {
     private final MatchingAlgorithm matchingAlgorithm;
     private final AuctionAlgorithm auctionAlgorithm;
     private TradingStatesEnum currentState = CLOSED;
+    private final AtomicReference<Price> latestPrice = new AtomicReference<>();
 
     public OrderbookImpl(OrderbookData orderbookData,
                          ActiveOrders activeOrders,
@@ -92,7 +93,7 @@ public class OrderbookImpl implements Orderbook {
     }
 
     @Override
-    public Optional<Price>  getBestBidPrice() {
+    public Optional<Price> getBestBidPrice() {
         return activeOrders.getBestBidPrice();
     }
 
@@ -199,6 +200,16 @@ public class OrderbookImpl implements Orderbook {
     @Override
     public Optional<Order> getBestBidOrder() {
         return activeOrders.getBestBidOrder();
+    }
+
+    @Override
+    public TopOfBook getTopOfBook() {
+        var builder = ImmutableTopOfBook.builder()
+                .orderbookId(getOrderbookId())
+                .timeOfEvent(getOrderbookId())
+                .eventType(SYSTEM);
+        Optional.ofNullable(latestPrice.get()).map(lp -> ImmutablePriceQuote.builder().price(lp).build()).ifPresent(builder::lastQuote);
+        return builder.build();
     }
 
     @Override

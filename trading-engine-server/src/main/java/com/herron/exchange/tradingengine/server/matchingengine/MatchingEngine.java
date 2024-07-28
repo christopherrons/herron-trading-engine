@@ -5,9 +5,8 @@ import com.herron.exchange.common.api.common.api.trading.OrderbookEvent;
 import com.herron.exchange.common.api.common.enums.KafkaTopicEnum;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
-import com.herron.exchange.common.api.common.messages.common.Timestamp;
-import com.herron.exchange.common.api.common.messages.trading.ImmutablePriceQuote;
 import com.herron.exchange.common.api.common.messages.trading.StateChange;
+import com.herron.exchange.common.api.common.messages.trading.TopOfBook;
 import com.herron.exchange.common.api.common.messages.trading.Trade;
 import com.herron.exchange.common.api.common.messages.trading.TradeExecution;
 import com.herron.exchange.common.api.common.wrappers.ThreadWrapper;
@@ -19,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.CLOSING_AUCTION_RUN;
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.OPEN_AUCTION_RUN;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
@@ -105,31 +103,25 @@ public class MatchingEngine {
     private void updateOrderbook(Order order) {
         var orderbook = orderbookCache.getOrCreateOrderbook(order.orderbookId());
         if (orderbook == null) {
-            LOGGER.error("Order {} can not be added, orderbook {} does not exist.", order, order.orderbookId());
+            LOGGER.error("Order {} cannot be added, orderbook {} does not exist.", order, order.orderbookId());
             return;
         }
 
-        var preMatchAskPrice = orderbook.getBestAskPrice();
-        var preMatchBidPrice = orderbook.getBestBidPrice();
+        TopOfBook preMatchTob = orderbook.getTopOfBook();
 
-        if (orderbook.updateOrderbook(order)) {
-            broadcast(AUDIT_TRAIL_KEY, order);
-            var tradeExecution = orderbook.runMatchingAlgorithm(order);
-            broadcast(tradeExecution);
-
-            var postMatchAskOrder = orderbook.getBestAskOrder();
-            var postMatchBidOrder = orderbook.getBestBidOrder();
-
-            if (postMatchAskOrder.isPresent() && (preMatchAskPrice.isEmpty() || postMatchAskOrder.get().price().lt(preMatchAskPrice.get()))) {
-                broadcastTopOfBook(postMatchAskOrder.get());
-            }
-
-            if (postMatchBidOrder.isPresent() && (preMatchBidPrice.isEmpty() || postMatchBidOrder.get().price().gt(preMatchBidPrice.get()))) {
-                broadcastTopOfBook(postMatchBidOrder.get());
-            }
-
-        } else {
+        if (!orderbook.updateOrderbook(order)) {
             LOGGER.error("Could not update orderbook {}", order);
+            return;
+        }
+
+        broadcast(AUDIT_TRAIL_KEY, order);
+        var tradeExecution = orderbook.runMatchingAlgorithm(order);
+        broadcast(tradeExecution);
+
+        TopOfBook postMatchTob = orderbook.getTopOfBook();
+
+        if (!preMatchTob.equals(postMatchTob)) {
+            broadcastTopOfBook(postMatchTob);
         }
 
     }
@@ -154,37 +146,23 @@ public class MatchingEngine {
     }
 
     private void runAuction(Orderbook orderbook) {
-        var preMatchAskPrice = orderbook.getBestAskPrice();
-        var preMatchBidPrice = orderbook.getBestBidPrice();
+        TopOfBook preMatchTob = orderbook.getTopOfBook();
 
         var tradeExecution = orderbook.runAuctionAlgorithm();
         broadcast(tradeExecution);
 
-        var postMatchAskOrder = orderbook.getBestAskOrder();
-        var postMatchBidOrder = orderbook.getBestBidOrder();
+        TopOfBook postMatchTob = orderbook.getTopOfBook();
 
-        if (postMatchAskOrder.isPresent() && (preMatchAskPrice.isEmpty() || postMatchAskOrder.get().price().lt(preMatchAskPrice.get()))) {
-            broadcastTopOfBook(postMatchAskOrder.get());
-        }
-
-        if (postMatchBidOrder.isPresent() && (preMatchBidPrice.isEmpty() || postMatchBidOrder.get().price().gt(preMatchBidPrice.get()))) {
-            broadcastTopOfBook(postMatchBidOrder.get());
+        if (!preMatchTob.equals(postMatchTob)) {
+            broadcastTopOfBook(postMatchTob);
         }
     }
 
-    private void broadcastTopOfBook(Order order) {
-        if (order == null) {
+    private void broadcastTopOfBook(TopOfBook topOfBook) {
+        if (topOfBook == null) {
             return;
         }
-        broadcast(
-                TOP_OF_BOOK_DATA_KEY,
-                ImmutablePriceQuote.builder()
-                        .orderbookId(order.orderbookId())
-                        .timeOfEvent(Timestamp.now())
-                        .side(order.orderSide())
-                        .price(order.price())
-                        .eventType(SYSTEM)
-                        .build()
+        broadcast(TOP_OF_BOOK_DATA_KEY, topOfBook
         );
     }
 
