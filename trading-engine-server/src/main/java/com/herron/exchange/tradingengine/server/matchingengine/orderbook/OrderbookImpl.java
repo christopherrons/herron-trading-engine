@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.herron.exchange.common.api.common.enums.EventType.SYSTEM;
+import static com.herron.exchange.common.api.common.enums.QuoteTypeEnum.*;
 import static com.herron.exchange.common.api.common.enums.TradingStatesEnum.*;
 
 
@@ -204,11 +205,23 @@ public class OrderbookImpl implements Orderbook {
 
     @Override
     public TopOfBook getTopOfBook() {
+        //FIXME: THis not correct, timestamp of the quotes should be when the were originally created, not now.
+        var now = Timestamp.now();
         var builder = ImmutableTopOfBook.builder()
                 .orderbookId(getOrderbookId())
-                .timeOfEvent(getOrderbookId())
+                .timeOfEvent(Timestamp.now())
                 .eventType(SYSTEM);
-        Optional.ofNullable(latestPrice.get()).map(lp -> ImmutablePriceQuote.builder().price(lp).build()).ifPresent(builder::lastQuote);
+
+        Optional.ofNullable(latestPrice.get())
+                .map(lp -> (ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(lp).eventType(SYSTEM)).timeOfEvent(now).quoteType(LAST_PRICE).build())
+                .ifPresent(builder::lastQuote);
+        getBestAskOrder()
+                .map(ao -> ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(ao.price()).eventType(ao.eventType()).timeOfEvent(now).quoteType(ASK_PRICE).build())
+                .ifPresent(builder::askQuote);
+        getBestBidOrder()
+                .map(bo -> ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(bo.price()).eventType(bo.eventType()).timeOfEvent(now).quoteType(BID_PRICE).build())
+                .ifPresent(builder::bidQuote);
+
         return builder.build();
     }
 
@@ -254,6 +267,8 @@ public class OrderbookImpl implements Orderbook {
                     if (order.orderId().equals(updatedMatchingOrder.orderId())) {
                         updatedMatchingOrder = order;
                     }
+                } else if (message instanceof Trade trade) {
+                    latestPrice.set(trade.price());
                 }
             }
         } while (!matchingEvents.isEmpty() && updatedMatchingOrder.orderOperation() != OrderOperationEnum.CANCEL);
@@ -277,6 +292,9 @@ public class OrderbookImpl implements Orderbook {
         if (equilibriumPrice == null) {
             return null;
         }
+
+        latestPrice.set(equilibriumPrice.optimalPrice().equilibriumPrice());
+
         final List<OrderbookEvent> events = new ArrayList<>();
         List<OrderbookEvent> matchingEvents;
         do {

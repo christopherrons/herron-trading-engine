@@ -120,10 +120,9 @@ public class MatchingEngine {
 
         TopOfBook postMatchTob = orderbook.getTopOfBook();
 
-        if (!preMatchTob.equals(postMatchTob)) {
+        if (preMatchTob.hasUpdated(postMatchTob)) {
             broadcastTopOfBook(postMatchTob);
         }
-
     }
 
     private void updateOrderbook(StateChange stateChange) {
@@ -153,7 +152,7 @@ public class MatchingEngine {
 
         TopOfBook postMatchTob = orderbook.getTopOfBook();
 
-        if (!preMatchTob.equals(postMatchTob)) {
+        if (!preMatchTob.hasUpdated(postMatchTob)) {
             broadcastTopOfBook(postMatchTob);
         }
     }
