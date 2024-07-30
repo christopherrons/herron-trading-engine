@@ -33,7 +33,7 @@ public class OrderbookImpl implements Orderbook {
     private final MatchingAlgorithm matchingAlgorithm;
     private final AuctionAlgorithm auctionAlgorithm;
     private TradingStatesEnum currentState = CLOSED;
-    private final AtomicReference<Price> latestPrice = new AtomicReference<>();
+    private final AtomicReference<PriceQuote> latestPrice = new AtomicReference<>();
 
     public OrderbookImpl(OrderbookData orderbookData,
                          ActiveOrders activeOrders,
@@ -205,21 +205,17 @@ public class OrderbookImpl implements Orderbook {
 
     @Override
     public TopOfBook getTopOfBook() {
-        //FIXME: THis not correct, timestamp of the quotes should be when the were originally created, not now.
-        var now = Timestamp.now();
         var builder = ImmutableTopOfBook.builder()
                 .orderbookId(getOrderbookId())
                 .timeOfEvent(Timestamp.now())
                 .eventType(SYSTEM);
 
-        Optional.ofNullable(latestPrice.get())
-                .map(lp -> (ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(lp).eventType(SYSTEM)).timeOfEvent(now).quoteType(LAST_PRICE).build())
-                .ifPresent(builder::lastQuote);
+        Optional.ofNullable(latestPrice.get()).ifPresent(builder::lastQuote);
         getBestAskOrder()
-                .map(ao -> ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(ao.price()).eventType(ao.eventType()).timeOfEvent(now).quoteType(ASK_PRICE).build())
+                .map(ao -> ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(ao.price()).eventType(ao.eventType()).timeOfEvent(ao.timeOfEvent()).quoteType(ASK_PRICE).build())
                 .ifPresent(builder::askQuote);
         getBestBidOrder()
-                .map(bo -> ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(bo.price()).eventType(bo.eventType()).timeOfEvent(now).quoteType(BID_PRICE).build())
+                .map(bo -> ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(bo.price()).eventType(bo.eventType()).timeOfEvent(bo.timeOfEvent()).quoteType(BID_PRICE).build())
                 .ifPresent(builder::bidQuote);
 
         return builder.build();
@@ -268,7 +264,7 @@ public class OrderbookImpl implements Orderbook {
                         updatedMatchingOrder = order;
                     }
                 } else if (message instanceof Trade trade) {
-                    latestPrice.set(trade.price());
+                    latestPrice.set(ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(trade.price()).eventType(SYSTEM).timeOfEvent(trade.timeOfEvent()).quoteType(LAST_PRICE).build());
                 }
             }
         } while (!matchingEvents.isEmpty() && updatedMatchingOrder.orderOperation() != OrderOperationEnum.CANCEL);
@@ -293,7 +289,7 @@ public class OrderbookImpl implements Orderbook {
             return null;
         }
 
-        latestPrice.set(equilibriumPrice.optimalPrice().equilibriumPrice());
+        latestPrice.set(ImmutablePriceQuote.builder().orderbookId(getOrderbookId()).price(equilibriumPrice.optimalPrice().equilibriumPrice()).eventType(SYSTEM).timeOfEvent(equilibriumPrice.timeOfEvent()).quoteType(LAST_PRICE).build());
 
         final List<OrderbookEvent> events = new ArrayList<>();
         List<OrderbookEvent> matchingEvents;

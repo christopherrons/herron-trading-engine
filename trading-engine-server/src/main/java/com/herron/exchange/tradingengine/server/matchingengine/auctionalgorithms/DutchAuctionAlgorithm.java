@@ -1,6 +1,7 @@
 package com.herron.exchange.tradingengine.server.matchingengine.auctionalgorithms;
 
 import com.herron.exchange.common.api.common.messages.common.Price;
+import com.herron.exchange.common.api.common.messages.common.Timestamp;
 import com.herron.exchange.common.api.common.messages.common.Volume;
 import com.herron.exchange.tradingengine.server.matchingengine.api.AuctionAlgorithm;
 import com.herron.exchange.tradingengine.server.matchingengine.auctionalgorithms.model.EquilibriumPriceResult;
@@ -54,6 +55,6 @@ public class DutchAuctionAlgorithm implements AuctionAlgorithm {
             }
         }
 
-        return new EquilibriumPriceResult(maxVolumeMatchAtPrice, volumeMatchAtPriceItems);
+        return new EquilibriumPriceResult(Timestamp.now(), maxVolumeMatchAtPrice, volumeMatchAtPriceItems);
     }
 }
