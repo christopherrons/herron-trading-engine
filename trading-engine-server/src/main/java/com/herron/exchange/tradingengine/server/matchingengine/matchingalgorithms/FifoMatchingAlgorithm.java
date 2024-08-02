@@ -52,17 +52,10 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
     }
 
     private List<OrderbookEvent> matchActiveOrder(Order incomingOrder) {
-        Optional<Order> opposingBestOptional = getOpposingBestOrder(incomingOrder);
-        if (opposingBestOptional.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        Order opposingBest = opposingBestOptional.get();
-
-        if (isMatch(incomingOrder, opposingBest)) {
-            return createMatchingMessages(incomingOrder, opposingBest);
-        }
-        return Collections.emptyList();
+        return getOpposingBestOrder(incomingOrder)
+                .filter(opposingBest -> isMatch(incomingOrder, opposingBest))
+                .map(opposingBest -> createMatchingMessages(incomingOrder, opposingBest))
+                .orElse(Collections.emptyList());
     }
 
     public List<OrderbookEvent> matchFillOrKill(Order fillOrKillOrder) {
@@ -70,39 +63,22 @@ public class FifoMatchingAlgorithm implements MatchingAlgorithm {
             return createKillMessage(fillOrKillOrder);
         }
 
-        Optional<Order> opposingBestOptional = getOpposingBestOrder(fillOrKillOrder);
-        if (opposingBestOptional.isEmpty()) {
-            return createKillMessage(fillOrKillOrder);
-        }
-
-        Order opposingBest = opposingBestOptional.get();
-
-        return createMatchingMessages(fillOrKillOrder, opposingBest);
+        return getOpposingBestOrder(fillOrKillOrder)
+                .map(opposingBest -> createMatchingMessages(fillOrKillOrder, opposingBest))
+                .orElseGet(() -> createKillMessage(fillOrKillOrder));
     }
 
     public List<OrderbookEvent> matchFillAndKill(Order fillAndKillOrder) {
-        Optional<Order> opposingBestOptional = getOpposingBestOrder(fillAndKillOrder);
-        if (opposingBestOptional.isEmpty()) {
-            return createKillMessage(fillAndKillOrder);
-        }
-
-        Order opposingBest = opposingBestOptional.get();
-
-        if (isMatch(fillAndKillOrder, opposingBest)) {
-            return createMatchingMessages(fillAndKillOrder, opposingBest);
-        }
-        return createKillMessage(fillAndKillOrder);
+        return getOpposingBestOrder(fillAndKillOrder)
+                .filter(opposingBest -> isMatch(fillAndKillOrder, opposingBest))
+                .map(opposingBest -> createMatchingMessages(fillAndKillOrder, opposingBest))
+                .orElseGet(() -> createKillMessage(fillAndKillOrder));
     }
 
     public List<OrderbookEvent> matchMarketOrder(Order marketOrder) {
-        Optional<Order> opposingBestOptional = getOpposingBestOrder(marketOrder);
-        if (opposingBestOptional.isEmpty()) {
-            return createKillMessage(marketOrder);
-        }
-
-        Order opposingBest = opposingBestOptional.get();
-
-        return createMatchingMessages(marketOrder, opposingBest);
+        return getOpposingBestOrder(marketOrder)
+                .map(opposingBest -> createMatchingMessages(marketOrder, opposingBest))
+                .orElseGet(() -> createKillMessage(marketOrder));
     }
 
     private Optional<Order> getOpposingBestOrder(Order incomingOrder) {

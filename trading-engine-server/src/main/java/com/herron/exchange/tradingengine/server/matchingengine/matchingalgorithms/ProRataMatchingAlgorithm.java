@@ -54,59 +54,32 @@ public class ProRataMatchingAlgorithm implements MatchingAlgorithm {
     }
 
     private List<OrderbookEvent> matchActiveOrder(Order incomingOrder) {
-        Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(incomingOrder);
-        if (opposingBestOptional.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        PriceLevel opposingBest = opposingBestOptional.get();
-
-        if (isMatch(incomingOrder, opposingBest.getPrice())) {
-            return matchProRata(incomingOrder, opposingBest);
-        }
-
-        return Collections.emptyList();
+        return getOpposingBestPriceLevel(incomingOrder)
+                .filter(opposingBest -> isMatch(incomingOrder, opposingBest.getPrice()))
+                .map(opposingBest -> matchProRata(incomingOrder, opposingBest))
+                .orElse(Collections.emptyList());
     }
 
     public List<OrderbookEvent> matchFillOrKill(Order fillOrKillOrder) {
         if (!activeOrders.isTotalFillPossible(fillOrKillOrder)) {
             return createKillMessage(fillOrKillOrder);
         }
-
-        Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(fillOrKillOrder);
-        if (opposingBestOptional.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        PriceLevel opposingBest = opposingBestOptional.get();
-
-        return matchProRata(fillOrKillOrder, opposingBest);
+        return getOpposingBestPriceLevel(fillOrKillOrder)
+                .map(opposingBest -> matchProRata(fillOrKillOrder, opposingBest))
+                .orElse(createKillMessage(fillOrKillOrder));
     }
 
     public List<OrderbookEvent> matchFillAndKill(Order fillAndKillOrder) {
-        Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(fillAndKillOrder);
-        if (opposingBestOptional.isEmpty()) {
-            return createKillMessage(fillAndKillOrder);
-        }
-
-        PriceLevel opposingBest = opposingBestOptional.get();
-
-        if (isMatch(fillAndKillOrder, opposingBest.getPrice())) {
-            return matchProRata(fillAndKillOrder, opposingBest);
-        }
-
-        return createKillMessage(fillAndKillOrder);
+        return getOpposingBestPriceLevel(fillAndKillOrder)
+                .filter(opposingBest -> isMatch(fillAndKillOrder, opposingBest.getPrice()))
+                .map(opposingBest -> matchProRata(fillAndKillOrder, opposingBest))
+                .orElse(createKillMessage(fillAndKillOrder));
     }
 
     public List<OrderbookEvent> matchMarketOrder(Order marketOrder) {
-        Optional<PriceLevel> opposingBestOptional = getOpposingBestPriceLevel(marketOrder);
-        if (opposingBestOptional.isEmpty()) {
-            return createKillMessage(marketOrder);
-        }
-
-        PriceLevel opposingBest = opposingBestOptional.get();
-
-        return matchProRata(marketOrder, opposingBest);
+        return getOpposingBestPriceLevel(marketOrder)
+                .map(opposingBest -> matchProRata(marketOrder, opposingBest))
+                .orElse(createKillMessage(marketOrder));
     }
 
     private List<OrderbookEvent> matchProRata(final Order incomingOrder, final PriceLevel opposingBest) {
