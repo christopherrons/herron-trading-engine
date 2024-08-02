@@ -11,7 +11,7 @@ The Trading Engine takes in orders and matches them together. The events are the
 
 ## Requirements
 
-* Java 17
+* Java 21
 * [Kafka](https://www.apache.org/dyn/closer.cgi?path=/kafka/3.3.1/kafka_2.13-3.3.1.tgz)
 
 ## Documentation
