@@ -10,46 +10,44 @@ This document describes the data flow of the application.
 
 ```mermaid
 flowchart LR;
-TES{Trading Engine Starts} --->|broadcast|BA
-TES{Trading Engine Starts} ---> |broadcast|EXM
 
-subgraph BA[User Generated Order Data]
-BSP1[Partition 1] -.- BSPN[Partition.. N]
+subgraph KAFKA_USER_GENERATED_ORDER_DATA_TOPIC[User Generated Order Data]
+KAFKA_USER_GENERATED_ORDER_DATA_TOPIC_PARTITION_1[Partition 1] -.- KAFKA_USER_GENERATED_ORDER_DATA_TOPIC_PARTITION_N[Partition.. N]
 end
 
-subgraph EXM[Reference Data]
-EXP1[Partition 1] -.- EXP1N[Partition... N]
+subgraph KAFKA_REFERENCE_DATA_TOPIC[Reference Data]
+KAFKA_REFERENCE_DATA_TOPIC_PARTITION_1[Partition 1] -.- KAFKA_REFERENCE_DATA_TOPIC_PARTITION_N[Partition... N]
 end
 
-BA -->|Events|TAE
-EXM -->|Events|TAE
-subgraph TAE[Trading Engine]
+KAFKA_USER_GENERATED_ORDER_DATA_TOPIC -->|kafka subscription|TRADING_ENGINE
+KAFKA_REFERENCE_DATA_TOPIC -->|kafka subscription|TRADING_ENGINE
+subgraph TRADING_ENGINE[Trading Engine]
 end
 
-TAE -->|Events|MAE
-subgraph MAE[Matching Engine]
-MAEP1[Partition 1] -.- MAEPN[Partition... N]
+TRADING_ENGINE -->|Events|MATCHING_ENGINE
+subgraph MATCHING_ENGINE[Matching Engine]
+MATCHING_ENGINE_PARTITION_1[Partition 1] -.- MATCHING_ENGINE_PARTITION_N[Partition... N]
 end
 
-MAE -->|Orderbook Events|AUT
-subgraph AUT[Audit Trail]
-AUTP1[Partition 1] -.- AUTPN[Partition... N]
+MATCHING_ENGINE --> KAFKA_AUDIT_TRAIL
+subgraph KAFKA_AUDIT_TRAIL[Audit Trail]
+KAFKA_AUDIT_TRAIL_PARTITION_1[Partition 1] -.- KAFKA_AUDIT_TRAIL_PARTITION_N[Partition... N]
 end
 
-MAE -->|Price Quotes|TOB
-subgraph TOB[Top of Book - Price Quotes]
-TOBP1[Partition 1] -.- TOBPN[Partition... N]
+MATCHING_ENGINE --> KAFKA_TOP_OF_BOOK
+subgraph KAFKA_TOP_OF_BOOK[Top of Book]
+KAFKA_TOP_OF_BOOK_PARTITION_1[Partition 1] -.- KAFKA_TOP_OF_BOOK_PARTITION_N[Partition... N]
 end
 
-MAE -->|Trades|TR
-subgraph TR[Trades]
-TRP1[Partition 1] -.- TRPN[Partition... N]
+MATCHING_ENGINE --> KAFKA_TRADES
+subgraph KAFKA_TRADES[Trades]
+KAFKA_TRADES_PARTITION_1[Partition 1] -.- KAFKA_TRADES_PARTITION_N[Partition... N]
 end
 
-AUT -->|Deserialize|KP
-TR -->|Deserialize|KP
-TOB -->|Deserialize|KP
-subgraph KP[Kafka Producer]
-KPTP1[Partition 1] -.- KPTPN[Partition... N]
+KAFKA_AUDIT_TRAIL --> KAFKA_PRODUCER
+KAFKA_TRADES --> KAFKA_PRODUCER
+KAFKA_TOP_OF_BOOK --> KAFKA_PRODUCER
+subgraph KAFKA_PRODUCER[Kafka Producer]
+KAFKA_PRODUCER_PARTITION_1[Partition 1] -.- KAFKA_PRODUCER_PARTITION_N[Partition... N]
 end
 ```
