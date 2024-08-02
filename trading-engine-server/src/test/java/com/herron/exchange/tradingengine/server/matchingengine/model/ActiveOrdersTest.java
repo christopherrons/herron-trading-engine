@@ -52,13 +52,13 @@ class ActiveOrdersTest {
     void test_best_price_after_insert_active_orders() {
         activeOrders.addOrder(buildOrderAdd(0, 100, 10, BID, "1"));
         activeOrders.addOrder(buildOrderAdd(2, 102, 10, ASK, "2"));
-        assertEquals(100, activeOrders.getBestBidPrice().getRealValue());
-        assertEquals(102, activeOrders.getBestAskPrice().getRealValue());
+        assertEquals(100, activeOrders.getBestBidPrice().get().getRealValue());
+        assertEquals(102, activeOrders.getBestAskPrice().get().getRealValue());
 
         activeOrders.addOrder(buildOrderAdd(0, 101, 10, BID, "3"));
         activeOrders.addOrder(buildOrderAdd(2, 101, 10, ASK, "3"));
-        assertEquals(101, activeOrders.getBestBidPrice().getRealValue());
-        assertEquals(101, activeOrders.getBestAskPrice().getRealValue());
+        assertEquals(101, activeOrders.getBestBidPrice().get().getRealValue());
+        assertEquals(101, activeOrders.getBestAskPrice().get().getRealValue());
     }
 
     @Test
@@ -86,13 +86,13 @@ class ActiveOrdersTest {
         activeOrders.addOrder(buildOrderAdd(2, 102, 10, ASK, "2"));
         activeOrders.addOrder(buildOrderAdd(0, 99, 10, BID, "3"));
         activeOrders.addOrder(buildOrderAdd(2, 103, 10, ASK, "4"));
-        assertEquals(100, activeOrders.getBestBidPrice().getRealValue());
-        assertEquals(102, activeOrders.getBestAskPrice().getRealValue());
+        assertEquals(100, activeOrders.getBestBidPrice().get().getRealValue());
+        assertEquals(102, activeOrders.getBestAskPrice().get().getRealValue());
 
         activeOrders.removeOrder("1");
         activeOrders.removeOrder("2");
-        assertEquals(99, activeOrders.getBestBidPrice().getRealValue());
-        assertEquals(103, activeOrders.getBestAskPrice().getRealValue());
+        assertEquals(99, activeOrders.getBestBidPrice().get().getRealValue());
+        assertEquals(103, activeOrders.getBestAskPrice().get().getRealValue());
     }
 
     @Test

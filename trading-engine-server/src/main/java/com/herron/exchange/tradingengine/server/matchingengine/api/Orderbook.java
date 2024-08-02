@@ -5,12 +5,14 @@ import com.herron.exchange.common.api.common.enums.MatchingAlgorithmEnum;
 import com.herron.exchange.common.api.common.enums.TradingStatesEnum;
 import com.herron.exchange.common.api.common.messages.common.Price;
 import com.herron.exchange.common.api.common.messages.common.Volume;
+import com.herron.exchange.common.api.common.messages.trading.MarketByLevel;
 import com.herron.exchange.common.api.common.messages.trading.TopOfBook;
 import com.herron.exchange.common.api.common.messages.trading.TradeExecution;
 
 import java.util.Optional;
 
 public interface Orderbook {
+    MarketByLevel getMarketByLevel(int nrOfLevels);
 
     TopOfBook getTopOfBook();
 
@@ -70,7 +72,7 @@ public interface Orderbook {
 
     boolean removeOrder(String orderId);
 
-    Price getAskPriceAtPriceLevel(int priceLevel);
+    Optional<Price> getAskPriceAtPriceLevel(int priceLevel);
 
-    Price getBidPriceAtPriceLevel(int priceLevel);
+    Optional<Price> getBidPriceAtPriceLevel(int priceLevel);
 }
