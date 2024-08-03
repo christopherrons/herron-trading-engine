@@ -31,6 +31,16 @@ public class StateChangeOrchestrator {
         this.tradingEngine = tradingEngine;
     }
 
+    private static long calculateInitialDelay(LocalTime targetTime) {
+        LocalTime currentTime = LocalTime.now();
+        if (targetTime.isBefore(currentTime)) {
+            return 0;
+        }
+
+        Duration duration = Duration.between(currentTime, targetTime);
+        return duration.toMillis();
+    }
+
     public void scheduleStateChanges() {
         for (var orderbookData : ReferenceDataCache.getCache().getOrderbookData()) {
             schedulePreTrading(orderbookData);
@@ -156,16 +166,6 @@ public class StateChangeOrchestrator {
                 orderbookData.orderbookId(),
                 CLOSED
         );
-    }
-
-    private static long calculateInitialDelay(LocalTime targetTime) {
-        LocalTime currentTime = LocalTime.now();
-        if (targetTime.isBefore(currentTime)) {
-            return 0;
-        }
-
-        Duration duration = Duration.between(currentTime, targetTime);
-        return duration.toMillis();
     }
 
     private void scheduleStateChange(long initialDelay, String orderbookId, TradingStatesEnum tradingState) {

@@ -33,9 +33,9 @@ public class OrderbookImpl implements Orderbook {
     private final ActiveOrders activeOrders;
     private final MatchingAlgorithm matchingAlgorithm;
     private final AuctionAlgorithm auctionAlgorithm;
-    private TradingStatesEnum currentState = CLOSED;
     private final AtomicReference<PriceQuote> latestPrice = new AtomicReference<>();
     private final LockHandler lock = new LockHandler();
+    private TradingStatesEnum currentState = CLOSED;
 
     public OrderbookImpl(OrderbookData orderbookData,
                          ActiveOrders activeOrders,
