@@ -45,8 +45,14 @@ public class DutchAuctionAlgorithm implements AuctionAlgorithm {
         EquilibriumPriceResult.VolumeMatchAtPriceItem maxVolumeMatchAtPrice = new EquilibriumPriceResult.VolumeMatchAtPriceItem(Price.ZERO, Volume.ZERO, Volume.ZERO);
         List<EquilibriumPriceResult.VolumeMatchAtPriceItem> volumeMatchAtPriceItems = new ArrayList<>();
         for (var eqPrice : possibleEquilibriumPrice) {
-            var bidVolume = bidPriceLevels.stream().filter(pl -> pl.getPrice().geq(eqPrice)).map(PriceLevel::volumeAtPriceLevel).reduce(Volume.ZERO, Volume::add);
-            var askVolume = askPriceLevels.stream().filter(pl -> pl.getPrice().leq(eqPrice)).map(PriceLevel::volumeAtPriceLevel).reduce(Volume.ZERO, Volume::add);
+            var bidVolume = bidPriceLevels.stream()
+                    .filter(pl -> pl.getPrice().geq(eqPrice))
+                    .map(PriceLevel::volumeAtPriceLevel)
+                    .reduce(Volume.ZERO, Volume::add);
+            var askVolume = askPriceLevels.stream()
+                    .filter(pl -> pl.getPrice().leq(eqPrice))
+                    .map(PriceLevel::volumeAtPriceLevel)
+                    .reduce(Volume.ZERO, Volume::add);
 
             var matchingVolumeAtPrice = new EquilibriumPriceResult.VolumeMatchAtPriceItem(eqPrice, bidVolume, askVolume);
             volumeMatchAtPriceItems.add(matchingVolumeAtPrice);

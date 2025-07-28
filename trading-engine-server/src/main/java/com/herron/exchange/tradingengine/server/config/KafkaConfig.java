@@ -6,7 +6,6 @@ import com.herron.exchange.common.api.common.kafka.KafkaBroadcastHandler;
 import com.herron.exchange.common.api.common.kafka.KafkaBroadcastProducer;
 import com.herron.exchange.common.api.common.kafka.KafkaConsumerClient;
 import com.herron.exchange.common.api.common.kafka.model.KafkaSubscriptionDetails;
-import com.herron.exchange.common.api.common.logging.EventLogger;
 import com.herron.exchange.common.api.common.messages.common.PartitionKey;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;

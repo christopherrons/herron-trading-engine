@@ -34,7 +34,6 @@ public class OrderbookFactory {
                 }
                 yield new OrderbookImpl(orderbookData, activeOrders, matchingAlgorithm, auctionAlgorithm);
             }
-            default -> null;
         };
     }
 
